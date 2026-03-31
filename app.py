@@ -114,9 +114,9 @@ def login_page():
                         st.error("Could not send OTP. Please try again.")
         else:
             # Step 2: Enter the OTP code
-            st.info(f"OTP sent to **{st.session_state['otp_email_address']}**. Enter the 6-digit code below.")
+            st.info(f"OTP sent to **{st.session_state['otp_email_address']}**. Enter the code from your email below.")
             with st.form("otp_verify_form"):
-                otp_code = st.text_input("Enter OTP Code", max_chars=6, key="otp_code")
+                otp_code = st.text_input("Enter OTP Code", max_chars=8, key="otp_code")
                 verify_btn = st.form_submit_button("Verify & Login", use_container_width=True)
 
             if verify_btn:
