@@ -5,3 +5,4 @@ plotly>=5.18.0
 pydantic>=2.0.0
 python-dotenv>=1.0.0
 pandas>=2.0.0
+extra-streamlit-components>=0.1.60

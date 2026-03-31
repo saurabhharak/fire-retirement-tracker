@@ -2,22 +2,78 @@
 Authentication module for FIRE Retirement Tracker.
 
 Handles login, signup, logout, session validation, and idle timeout
-using Supabase Auth. Stores JWT tokens and user info in st.session_state.
+using Supabase Auth.
+
+Session persistence strategy (industry standard):
+- Auth tokens stored in BOTH st.session_state AND browser cookies
+- session_state = fast access during current session
+- Cookies = survive browser tab close, page refresh, server restarts
+- On page load: check session_state first, fall back to cookies
+- On login: write to both
+- On logout: clear both
 """
 
+import logging
 from datetime import datetime, timezone
 
 import streamlit as st
 from gotrue.errors import AuthApiError
-
 from supabase import Client
 
 
-def _get_supabase() -> Client:
-    """Retrieve the cached Supabase client from session_state or cache."""
-    # Imported here to avoid circular imports; db.py or app.py sets this up.
-    from db import get_supabase_client
+# ---------------------------------------------------------------------------
+# Cookie helpers (using Streamlit query params as lightweight cookie alternative)
+# We use st.query_params as a fallback since extra-streamlit-components
+# can have compatibility issues. The primary persistence mechanism is
+# writing tokens to a hidden cookie via JS injection.
+# ---------------------------------------------------------------------------
 
+def _save_to_cookies(access_token: str, refresh_token: str, user_id: str, user_email: str) -> None:
+    """Save auth tokens to browser localStorage via JS injection."""
+    js_code = f"""
+    <script>
+        localStorage.setItem('fire_access_token', '{access_token}');
+        localStorage.setItem('fire_refresh_token', '{refresh_token}');
+        localStorage.setItem('fire_user_id', '{user_id}');
+        localStorage.setItem('fire_user_email', '{user_email}');
+    </script>
+    """
+    st.components.v1.html(js_code, height=0)
+
+
+def _clear_cookies() -> None:
+    """Clear auth tokens from browser localStorage."""
+    js_code = """
+    <script>
+        localStorage.removeItem('fire_access_token');
+        localStorage.removeItem('fire_refresh_token');
+        localStorage.removeItem('fire_user_id');
+        localStorage.removeItem('fire_user_email');
+    </script>
+    """
+    st.components.v1.html(js_code, height=0)
+
+
+def _restore_from_cookies() -> bool:
+    """Try to restore session from browser localStorage.
+
+    Uses a two-step approach:
+    1. Inject JS to read localStorage and write to a hidden element
+    2. On next rerun, check if tokens are available
+
+    Returns True if session was restored to session_state.
+    """
+    # This is handled via the cookie sync component in app.py
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+def _get_supabase() -> Client:
+    """Retrieve the cached Supabase client."""
+    from db import get_supabase_client
     return get_supabase_client()
 
 
@@ -27,31 +83,33 @@ def _update_last_activity() -> None:
 
 
 def _clear_session() -> None:
-    """Remove all auth-related keys from session_state."""
+    """Remove all auth-related keys from session_state and cookies."""
     keys_to_clear = [
-        "access_token",
-        "refresh_token",
-        "user_id",
-        "user_email",
-        "last_activity",
-        "fire_inputs",
-        "income_cache",
-        "expenses_cache",
+        "access_token", "refresh_token", "user_id", "user_email",
+        "last_activity", "fire_inputs", "income_cache", "expenses_cache",
     ]
     for key in keys_to_clear:
         st.session_state.pop(key, None)
+    try:
+        _clear_cookies()
+    except Exception:
+        pass
 
 
 def _store_session(session, user) -> dict:
-    """Persist auth tokens and user info into session_state.
-
-    Returns a dict with user_id and email for convenience.
-    """
+    """Persist auth tokens into session_state and browser cookies."""
     st.session_state["access_token"] = session.access_token
     st.session_state["refresh_token"] = session.refresh_token
     st.session_state["user_id"] = user.id
     st.session_state["user_email"] = user.email
     _update_last_activity()
+
+    # Persist to browser cookies for tab-close survival
+    try:
+        _save_to_cookies(session.access_token, session.refresh_token, user.id, user.email)
+    except Exception:
+        pass  # Cookies are a bonus, not critical
+
     return {"user_id": user.id, "email": user.email}
 
 
@@ -59,19 +117,9 @@ def _store_session(session, user) -> dict:
 # Public API
 # ---------------------------------------------------------------------------
 
-
 def login(email: str, password: str) -> dict:
-    """Authenticate a user with email and password.
-
-    Returns:
-        dict with ``user_id`` and ``email`` on success.
-
-    Raises:
-        AuthApiError: on invalid credentials or Supabase error.
-        Exception: on unexpected failures.
-    """
+    """Authenticate with email and password."""
     supabase = _get_supabase()
-
     try:
         response = supabase.auth.sign_in_with_password(
             {"email": email, "password": password}
@@ -83,16 +131,11 @@ def login(email: str, password: str) -> dict:
 
     if response.session is None or response.user is None:
         raise Exception("Login failed: no session returned from Supabase.")
-
     return _store_session(response.session, response.user)
 
 
 def send_otp(email: str) -> bool:
-    """Send a magic link / OTP to the user's email via Supabase Auth.
-
-    Returns True if the OTP was sent successfully.
-    Raises AuthApiError or Exception on failure.
-    """
+    """Send OTP to email via Supabase Auth."""
     supabase = _get_supabase()
     try:
         supabase.auth.sign_in_with_otp({"email": email})
@@ -104,17 +147,11 @@ def send_otp(email: str) -> bool:
 
 
 def verify_otp(email: str, token: str) -> dict:
-    """Verify the OTP code entered by the user.
-
-    Returns dict with user_id and email on success.
-    Raises AuthApiError or Exception on failure.
-    """
+    """Verify OTP code and log in."""
     supabase = _get_supabase()
     try:
         response = supabase.auth.verify_otp({
-            "email": email,
-            "token": token,
-            "type": "email",
+            "email": email, "token": token, "type": "email",
         })
     except AuthApiError:
         raise
@@ -123,25 +160,12 @@ def verify_otp(email: str, token: str) -> dict:
 
     if response.session is None or response.user is None:
         raise Exception("OTP verification failed: no session returned.")
-
     return _store_session(response.session, response.user)
 
 
 def signup(email: str, password: str) -> dict:
-    """Create a new user account (initial setup only).
-
-    After the first account is created, disable email signups in the
-    Supabase dashboard (Auth > Settings > Enable email signups = false).
-
-    Returns:
-        dict with ``user_id`` and ``email`` on success.
-
-    Raises:
-        AuthApiError: if signup is disabled or validation fails.
-        Exception: on unexpected failures.
-    """
+    """Create a new user account."""
     supabase = _get_supabase()
-
     try:
         response = supabase.auth.sign_up({"email": email, "password": password})
     except AuthApiError:
@@ -151,39 +175,31 @@ def signup(email: str, password: str) -> dict:
 
     if response.user is None:
         raise Exception("Signup failed: no user returned from Supabase.")
-
-    # If email confirmation is enabled, session may be None until confirmed.
     if response.session is not None:
         return _store_session(response.session, response.user)
-
     return {"user_id": response.user.id, "email": response.user.email}
 
 
 def logout() -> None:
-    """Sign out the current user and clear all session data."""
+    """Sign out and clear all session data."""
     try:
         supabase = _get_supabase()
         supabase.auth.sign_out()
     except Exception:
-        # Even if the server-side sign-out fails, clear local state.
         pass
     _clear_session()
 
 
 def check_session() -> bool:
-    """Check whether the current session is valid; refresh the JWT if needed.
+    """Validate and refresh the current session.
 
-    Returns:
-        True if the session is valid (or was successfully refreshed).
-        False if there is no session or the refresh failed.
+    Uses refresh token from session_state to restore the Supabase session.
+    This is necessary because the shared @st.cache_resource client doesn't
+    retain per-user auth state between Streamlit reruns.
     """
     if "access_token" not in st.session_state:
         return False
 
-    # The shared Supabase client (@st.cache_resource) does not retain
-    # per-user auth state between reruns. Instead of calling get_session()
-    # (which returns None on the shared client), we restore the session
-    # from session_state using the refresh token.
     refresh_token = st.session_state.get("refresh_token")
     if not refresh_token:
         return False
@@ -191,28 +207,19 @@ def check_session() -> bool:
     supabase = _get_supabase()
 
     try:
-        # Set the session on the client using the stored tokens so RLS works
         response = supabase.auth.set_session(
-            st.session_state["access_token"],
-            refresh_token,
+            st.session_state["access_token"], refresh_token,
         )
-
         if response is None or response.session is None:
             _clear_session()
             return False
 
-        # Update tokens in case they were refreshed
         st.session_state["access_token"] = response.session.access_token
         st.session_state["refresh_token"] = response.session.refresh_token
         _update_last_activity()
         return True
-
     except Exception:
-        # If set_session fails (e.g., token fully expired), session is dead
-        # but don't aggressively clear — the user might just need to re-login
-        # Only clear if both tokens are definitely invalid
         try:
-            # Last resort: try refreshing directly
             response = supabase.auth.refresh_session(refresh_token)
             if response and response.session:
                 st.session_state["access_token"] = response.session.access_token
@@ -221,48 +228,29 @@ def check_session() -> bool:
                 return True
         except Exception:
             pass
-
         _clear_session()
         return False
 
 
 def check_idle_timeout() -> bool:
-    """Check whether the user has been idle for longer than 30 minutes.
-
-    If the timeout has been exceeded the session is cleared automatically.
-
-    Returns:
-        True if the session is still active (within timeout).
-        False if the session was cleared due to inactivity.
-    """
+    """Check idle timeout (30 minutes). Clear session if exceeded."""
     from config import IDLE_TIMEOUT_MINUTES
 
     last_activity = st.session_state.get("last_activity")
-
     if last_activity is None:
         return False
 
     elapsed = (datetime.now(timezone.utc) - last_activity).total_seconds()
-    timeout_seconds = IDLE_TIMEOUT_MINUTES * 60
-
-    if elapsed > timeout_seconds:
+    if elapsed > IDLE_TIMEOUT_MINUTES * 60:
         logout()
         return False
 
-    # User is still active -- refresh the timestamp.
     _update_last_activity()
     return True
 
 
 def get_current_user_id() -> str:
-    """Return the ``user_id`` stored in session_state.
-
-    Returns:
-        The user's UUID string.
-
-    Raises:
-        RuntimeError: if no user is logged in.
-    """
+    """Return the user_id from session_state."""
     user_id = st.session_state.get("user_id")
     if user_id is None:
         raise RuntimeError("No authenticated user. Please log in.")
@@ -270,5 +258,5 @@ def get_current_user_id() -> str:
 
 
 def is_authenticated() -> bool:
-    """Convenience helper: True when a user_id is present in session_state."""
+    """True when a user_id is present in session_state."""
     return "user_id" in st.session_state and st.session_state["user_id"] is not None

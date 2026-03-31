@@ -74,6 +74,55 @@ from auth import check_idle_timeout, check_session, is_authenticated, logout
 
 
 # ---------------------------------------------------------------------------
+# Restore session from browser localStorage (survives tab close/refresh)
+# ---------------------------------------------------------------------------
+if not is_authenticated():
+    # Inject JS to read tokens from localStorage and pass via query params
+    restore_js = """
+    <script>
+        const token = localStorage.getItem('fire_access_token');
+        const refresh = localStorage.getItem('fire_refresh_token');
+        const uid = localStorage.getItem('fire_user_id');
+        const email = localStorage.getItem('fire_user_email');
+        if (token && refresh && uid) {
+            // Use a hidden iframe approach to pass data back to Streamlit
+            const params = new URLSearchParams(window.location.search);
+            if (!params.has('_restore')) {
+                params.set('_restore', '1');
+                params.set('_at', token);
+                params.set('_rt', refresh);
+                params.set('_uid', uid);
+                params.set('_email', email || '');
+                window.location.search = params.toString();
+            }
+        }
+    </script>
+    """
+    # Check if we have restore params from the JS redirect
+    params = st.query_params
+    if params.get("_restore") == "1":
+        access_token = params.get("_at", "")
+        refresh_token = params.get("_rt", "")
+        user_id = params.get("_uid", "")
+        user_email = params.get("_email", "")
+
+        if access_token and refresh_token and user_id:
+            st.session_state["access_token"] = access_token
+            st.session_state["refresh_token"] = refresh_token
+            st.session_state["user_id"] = user_id
+            st.session_state["user_email"] = user_email
+            from datetime import datetime, timezone
+            st.session_state["last_activity"] = datetime.now(timezone.utc)
+
+            # Clear the restore params from URL
+            st.query_params.clear()
+            st.rerun()
+    else:
+        # Only inject the restore JS if we're not already restoring
+        st.components.v1.html(restore_js, height=0)
+
+
+# ---------------------------------------------------------------------------
 # Login page (shown when not authenticated)
 # ---------------------------------------------------------------------------
 
