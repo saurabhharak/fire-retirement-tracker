@@ -11,7 +11,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="FIRE Retirement Tracker",
-    page_icon="\U0001F4CE",  # lotus/gem - Lakshmi prosperity symbol
+    page_icon="\U0001F48E",  # 💎 Gem - wealth symbol
     layout="wide",
 )
 
@@ -103,7 +103,7 @@ def login_page():
     """Render the login / signup form."""
     from gotrue.errors import AuthApiError
 
-    st.title("\U0001F4CE FIRE Retirement Tracker")
+    st.title("FIRE Retirement Tracker")
     st.subheader("Sign in to continue")
 
     tab_otp, tab_login, tab_signup = st.tabs(["Email OTP", "Password Login", "Sign Up"])
