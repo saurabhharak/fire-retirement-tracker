@@ -45,3 +45,14 @@ register_exception_handlers(app)
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok", "version": "2.0.0"}
+
+
+# Routers
+from app.routers import fire_inputs, income, expenses, sip_log, projections, export
+
+app.include_router(fire_inputs.router, prefix="/api")
+app.include_router(income.router, prefix="/api")
+app.include_router(expenses.router, prefix="/api")
+app.include_router(sip_log.router, prefix="/api")
+app.include_router(projections.router, prefix="/api")
+app.include_router(export.router, prefix="/api")
