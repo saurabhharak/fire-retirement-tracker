@@ -1,16 +1,13 @@
 """
 Authentication module for FIRE Retirement Tracker.
 
-Handles login, signup, logout, session validation, and idle timeout
-using Supabase Auth.
-
-Session persistence strategy (industry standard):
+Session persistence strategy:
 - Auth tokens stored in BOTH st.session_state AND browser cookies
-- session_state = fast access during current session
-- Cookies = survive browser tab close, page refresh, server restarts
-- On page load: check session_state first, fall back to cookies
+- session_state = fast access during current Streamlit session
+- Cookies = survive page reload, tab close, browser restart
 - On login: write to both
 - On logout: clear both
+- On page load: session_state checked first, cookies as fallback (in app.py)
 """
 
 import logging
@@ -21,64 +18,18 @@ from gotrue.errors import AuthApiError
 from supabase import Client
 
 
-# ---------------------------------------------------------------------------
-# Cookie helpers (using Streamlit query params as lightweight cookie alternative)
-# We use st.query_params as a fallback since extra-streamlit-components
-# can have compatibility issues. The primary persistence mechanism is
-# writing tokens to a hidden cookie via JS injection.
-# ---------------------------------------------------------------------------
-
-def _save_to_cookies(access_token: str, refresh_token: str, user_id: str, user_email: str) -> None:
-    """Save auth tokens to browser localStorage via JS injection."""
-    js_code = f"""
-    <script>
-        localStorage.setItem('fire_access_token', '{access_token}');
-        localStorage.setItem('fire_refresh_token', '{refresh_token}');
-        localStorage.setItem('fire_user_id', '{user_id}');
-        localStorage.setItem('fire_user_email', '{user_email}');
-    </script>
-    """
-    st.components.v1.html(js_code, height=0)
-
-
-def _clear_cookies() -> None:
-    """Clear auth tokens from browser localStorage."""
-    js_code = """
-    <script>
-        localStorage.removeItem('fire_access_token');
-        localStorage.removeItem('fire_refresh_token');
-        localStorage.removeItem('fire_user_id');
-        localStorage.removeItem('fire_user_email');
-    </script>
-    """
-    st.components.v1.html(js_code, height=0)
-
-
-def _restore_from_cookies() -> bool:
-    """Try to restore session from browser localStorage.
-
-    Uses a two-step approach:
-    1. Inject JS to read localStorage and write to a hidden element
-    2. On next rerun, check if tokens are available
-
-    Returns True if session was restored to session_state.
-    """
-    # This is handled via the cookie sync component in app.py
-    return False
-
-
-# ---------------------------------------------------------------------------
-# Internal helpers
-# ---------------------------------------------------------------------------
-
 def _get_supabase() -> Client:
-    """Retrieve the cached Supabase client."""
     from db import get_supabase_client
     return get_supabase_client()
 
 
+def _get_cookies():
+    """Get cookie controller - imported lazily to avoid circular imports."""
+    from streamlit_cookies_controller import CookieController
+    return CookieController()
+
+
 def _update_last_activity() -> None:
-    """Record the current time as the last user activity."""
     st.session_state["last_activity"] = datetime.now(timezone.utc)
 
 
@@ -90,8 +41,14 @@ def _clear_session() -> None:
     ]
     for key in keys_to_clear:
         st.session_state.pop(key, None)
+
+    # Clear cookies
     try:
-        _clear_cookies()
+        cookies = _get_cookies()
+        cookies.remove("fire_access_token")
+        cookies.remove("fire_refresh_token")
+        cookies.remove("fire_user_id")
+        cookies.remove("fire_user_email")
     except Exception:
         pass
 
@@ -104,9 +61,13 @@ def _store_session(session, user) -> dict:
     st.session_state["user_email"] = user.email
     _update_last_activity()
 
-    # Persist to browser cookies for tab-close survival
+    # Save to cookies (survive page reload)
     try:
-        _save_to_cookies(session.access_token, session.refresh_token, user.id, user.email)
+        cookies = _get_cookies()
+        cookies.set("fire_access_token", session.access_token)
+        cookies.set("fire_refresh_token", session.refresh_token)
+        cookies.set("fire_user_id", str(user.id))
+        cookies.set("fire_user_email", user.email or "")
     except Exception:
         pass  # Cookies are a bonus, not critical
 
@@ -181,7 +142,7 @@ def signup(email: str, password: str) -> dict:
 
 
 def logout() -> None:
-    """Sign out and clear all session data."""
+    """Sign out and clear all session data + cookies."""
     try:
         supabase = _get_supabase()
         supabase.auth.sign_out()
@@ -191,12 +152,7 @@ def logout() -> None:
 
 
 def check_session() -> bool:
-    """Validate and refresh the current session.
-
-    Uses refresh token from session_state to restore the Supabase session.
-    This is necessary because the shared @st.cache_resource client doesn't
-    retain per-user auth state between Streamlit reruns.
-    """
+    """Validate and refresh the current session."""
     if "access_token" not in st.session_state:
         return False
 
@@ -233,24 +189,20 @@ def check_session() -> bool:
 
 
 def check_idle_timeout() -> bool:
-    """Check idle timeout (30 minutes). Clear session if exceeded."""
+    """Check idle timeout (30 minutes)."""
     from config import IDLE_TIMEOUT_MINUTES
-
     last_activity = st.session_state.get("last_activity")
     if last_activity is None:
         return False
-
     elapsed = (datetime.now(timezone.utc) - last_activity).total_seconds()
     if elapsed > IDLE_TIMEOUT_MINUTES * 60:
         logout()
         return False
-
     _update_last_activity()
     return True
 
 
 def get_current_user_id() -> str:
-    """Return the user_id from session_state."""
     user_id = st.session_state.get("user_id")
     if user_id is None:
         raise RuntimeError("No authenticated user. Please log in.")
@@ -258,5 +210,4 @@ def get_current_user_id() -> str:
 
 
 def is_authenticated() -> bool:
-    """True when a user_id is present in session_state."""
     return "user_id" in st.session_state and st.session_state["user_id"] is not None
