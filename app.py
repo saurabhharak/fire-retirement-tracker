@@ -15,6 +15,61 @@ st.set_page_config(
     layout="wide",
 )
 
+# ---------------------------------------------------------------------------
+# Responsive CSS for mobile devices
+# ---------------------------------------------------------------------------
+st.markdown("""
+<style>
+/* Mobile-friendly metric cards */
+@media (max-width: 768px) {
+    /* Stack columns vertically on small screens */
+    [data-testid="column"] {
+        width: 100% !important;
+        flex: 1 0 100% !important;
+        min-width: 100% !important;
+    }
+
+    /* Improve readability */
+    .stMetric label { font-size: 0.8rem !important; }
+    .stMetric [data-testid="stMetricValue"] { font-size: 1.3rem !important; }
+
+    /* Make buttons touch-friendly */
+    .stButton > button {
+        min-height: 48px !important;
+        font-size: 1rem !important;
+    }
+
+    /* Form inputs touch-friendly */
+    .stTextInput input, .stNumberInput input, .stSelectbox select {
+        min-height: 44px !important;
+        font-size: 1rem !important;
+    }
+
+    /* Reduce padding */
+    .block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    /* Title sizing */
+    h1 { font-size: 1.5rem !important; }
+    h2 { font-size: 1.2rem !important; }
+    h3 { font-size: 1.1rem !important; }
+}
+
+/* Ensure dataframes scroll horizontally on small screens */
+[data-testid="stDataFrame"] {
+    overflow-x: auto !important;
+}
+
+/* Plotly charts responsive */
+.js-plotly-plot {
+    width: 100% !important;
+}
+</style>
+""", unsafe_allow_html=True)
+# SECURITY: Only hardcoded CSS above. No user-controlled data injected.
+
 from auth import check_idle_timeout, check_session, is_authenticated, logout
 
 
