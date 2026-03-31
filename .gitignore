@@ -1,0 +1,14 @@
+.env
+.env.local
+.env.*.local
+__pycache__/
+*.pyc
+*.pyo
+.streamlit/secrets.toml
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+*.xlsx
+~$*.xlsx
+xlsx_extract/
