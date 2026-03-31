@@ -87,6 +87,46 @@ def login(email: str, password: str) -> dict:
     return _store_session(response.session, response.user)
 
 
+def send_otp(email: str) -> bool:
+    """Send a magic link / OTP to the user's email via Supabase Auth.
+
+    Returns True if the OTP was sent successfully.
+    Raises AuthApiError or Exception on failure.
+    """
+    supabase = _get_supabase()
+    try:
+        supabase.auth.sign_in_with_otp({"email": email})
+        return True
+    except AuthApiError:
+        raise
+    except Exception as exc:
+        raise Exception(f"Could not send OTP: {exc}") from exc
+
+
+def verify_otp(email: str, token: str) -> dict:
+    """Verify the OTP code entered by the user.
+
+    Returns dict with user_id and email on success.
+    Raises AuthApiError or Exception on failure.
+    """
+    supabase = _get_supabase()
+    try:
+        response = supabase.auth.verify_otp({
+            "email": email,
+            "token": token,
+            "type": "email",
+        })
+    except AuthApiError:
+        raise
+    except Exception as exc:
+        raise Exception(f"OTP verification failed: {exc}") from exc
+
+    if response.session is None or response.user is None:
+        raise Exception("OTP verification failed: no session returned.")
+
+    return _store_session(response.session, response.user)
+
+
 def signup(email: str, password: str) -> dict:
     """Create a new user account (initial setup only).
 

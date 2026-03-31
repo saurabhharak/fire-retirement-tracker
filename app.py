@@ -84,8 +84,70 @@ def login_page():
     st.title("\U0001F525 FIRE Retirement Tracker")
     st.subheader("Sign in to continue")
 
-    tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
+    tab_otp, tab_login, tab_signup = st.tabs(["Email OTP", "Password Login", "Sign Up"])
 
+    # --- Tab 1: Email OTP (Magic Link) ---
+    with tab_otp:
+        if "otp_email_sent" not in st.session_state:
+            st.session_state["otp_email_sent"] = False
+            st.session_state["otp_email_address"] = ""
+
+        if not st.session_state["otp_email_sent"]:
+            # Step 1: Enter email and send OTP
+            with st.form("otp_request_form"):
+                otp_email = st.text_input("Email", key="otp_email")
+                send_btn = st.form_submit_button("Send OTP to Email", use_container_width=True)
+
+            if send_btn:
+                if not otp_email:
+                    st.error("Please enter your email.")
+                else:
+                    try:
+                        from auth import send_otp
+                        send_otp(otp_email)
+                        st.session_state["otp_email_sent"] = True
+                        st.session_state["otp_email_address"] = otp_email
+                        st.success(f"OTP sent to {otp_email}. Check your inbox!")
+                        st.rerun()
+                    except Exception as exc:
+                        logging.error(f"OTP send failed: {exc}")
+                        st.error("Could not send OTP. Please try again.")
+        else:
+            # Step 2: Enter the OTP code
+            st.info(f"OTP sent to **{st.session_state['otp_email_address']}**. Enter the 6-digit code below.")
+            with st.form("otp_verify_form"):
+                otp_code = st.text_input("Enter OTP Code", max_chars=6, key="otp_code")
+                verify_btn = st.form_submit_button("Verify & Login", use_container_width=True)
+
+            if verify_btn:
+                if not otp_code or len(otp_code) < 6:
+                    st.error("Please enter the 6-digit OTP code.")
+                else:
+                    try:
+                        from auth import verify_otp
+                        user_info = verify_otp(st.session_state["otp_email_address"], otp_code)
+                        st.session_state["otp_email_sent"] = False
+                        st.success(f"Welcome, {user_info['email']}!")
+                        st.rerun()
+                    except Exception as exc:
+                        logging.error(f"OTP verify failed: {exc}")
+                        st.error("Invalid OTP code. Please try again.")
+
+            if st.button("Resend OTP", key="resend_otp"):
+                try:
+                    from auth import send_otp
+                    send_otp(st.session_state["otp_email_address"])
+                    st.success("OTP resent! Check your inbox.")
+                except Exception as exc:
+                    logging.error(f"OTP resend failed: {exc}")
+                    st.error("Could not resend OTP.")
+
+            if st.button("Use different email", key="change_otp_email"):
+                st.session_state["otp_email_sent"] = False
+                st.session_state["otp_email_address"] = ""
+                st.rerun()
+
+    # --- Tab 2: Password Login ---
     with tab_login:
         with st.form("login_form"):
             email = st.text_input("Email", key="login_email")
@@ -96,7 +158,6 @@ def login_page():
             if not email or not password:
                 st.error("Please enter both email and password.")
             else:
-                # --- Rate limiting: block after 5 consecutive failures ---
                 if "login_failures" not in st.session_state:
                     st.session_state["login_failures"] = 0
                 if st.session_state["login_failures"] >= 5:
@@ -106,7 +167,7 @@ def login_page():
                         from auth import login
 
                         user_info = login(email, password)
-                        st.session_state["login_failures"] = 0  # reset on success
+                        st.session_state["login_failures"] = 0
                         st.success(f"Welcome, {user_info['email']}!")
                         st.rerun()
                     except AuthApiError as exc:
