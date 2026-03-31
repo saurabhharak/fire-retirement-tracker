@@ -6,7 +6,7 @@ from app.services.supabase_client import get_user_client
 
 logger = logging.getLogger(__name__)
 
-async def load_sip_logs(user_id: str, access_token: str, limit: int = 60) -> list[dict]:
+def load_sip_logs(user_id: str, access_token: str, limit: int = 60) -> list[dict]:
     try:
         client = get_user_client(access_token)
         response = (client.table("sip_log").select("*, sip_log_funds(*)")
@@ -17,11 +17,12 @@ async def load_sip_logs(user_id: str, access_token: str, limit: int = 60) -> lis
         logger.error(f"Could not load SIP logs: {e}")
         raise DatabaseError("Could not load SIP logs") from e
 
-async def save_sip_log(user_id: str, data: dict, access_token: str) -> Optional[dict]:
+def save_sip_log(user_id: str, data: dict, access_token: str) -> Optional[dict]:
     try:
         client = get_user_client(access_token)
-        funds = data.pop("funds", [])
-        payload = {**data, "user_id": user_id}
+        payload_data = dict(data)
+        funds = payload_data.pop("funds", [])
+        payload = {**payload_data, "user_id": user_id}
         response = (client.table("sip_log")
             .upsert(payload, on_conflict="user_id,month,year").execute())
         sip_log_row = response.data[0] if response.data else None

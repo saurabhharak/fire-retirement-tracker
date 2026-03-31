@@ -1,9 +1,16 @@
 """Pydantic v2 models for FIRE Retirement Tracker input validation."""
 
 from datetime import date
-from typing import Literal
+from typing import Generic, Literal, Optional, TypeVar
 
 from pydantic import BaseModel, Field, field_validator
+
+T = TypeVar("T")
+
+
+class ApiResponse(BaseModel, Generic[T]):
+    data: T
+    message: Optional[str] = None
 
 
 class FireInputs(BaseModel):
@@ -66,6 +73,15 @@ class FixedExpense(BaseModel):
     name: str = Field(max_length=100)
     amount: float = Field(gt=0)
     frequency: Literal["monthly", "quarterly", "yearly", "one-time"]
+
+
+class FixedExpenseUpdate(BaseModel):
+    """Partial update model for fixed expenses."""
+    name: Optional[str] = Field(None, max_length=100)
+    amount: Optional[float] = Field(None, gt=0)
+    frequency: Optional[Literal["monthly", "quarterly", "yearly", "one-time"]] = None
+    is_active: Optional[bool] = None
+    owner: Optional[str] = None
 
 
 class SipLogEntry(BaseModel):

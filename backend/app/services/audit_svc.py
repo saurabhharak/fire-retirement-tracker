@@ -4,7 +4,7 @@ from app.services.supabase_client import get_user_client
 
 logger = logging.getLogger(__name__)
 
-async def log_audit(user_id: str, action: str, details: dict = None, access_token: str = "") -> None:
+def log_audit(user_id: str, action: str, details: dict = None, access_token: str = "") -> None:
     try:
         client = get_user_client(access_token) if access_token else None
         if client:

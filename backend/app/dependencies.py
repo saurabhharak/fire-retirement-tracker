@@ -3,19 +3,18 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
+from pydantic import BaseModel
 
 from app.config import Settings, get_settings
 
 security = HTTPBearer()
 
 
-class CurrentUser:
+class CurrentUser(BaseModel):
     """Represents the authenticated user from the JWT."""
-
-    def __init__(self, id: str, email: str = "", access_token: str = ""):
-        self.id = id
-        self.email = email
-        self.access_token = access_token
+    id: str
+    email: str = ""
+    access_token: str = ""
 
 
 async def get_current_user(

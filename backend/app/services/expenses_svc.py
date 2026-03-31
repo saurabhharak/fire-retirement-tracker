@@ -6,7 +6,7 @@ from app.services.supabase_client import get_user_client
 
 logger = logging.getLogger(__name__)
 
-async def load_fixed_expenses(user_id: str, access_token: str, active_only: bool = True) -> list[dict]:
+def load_fixed_expenses(user_id: str, access_token: str, active_only: bool = True) -> list[dict]:
     try:
         client = get_user_client(access_token)
         query = client.table("fixed_expenses").select("*").eq("user_id", user_id)
@@ -18,7 +18,7 @@ async def load_fixed_expenses(user_id: str, access_token: str, active_only: bool
         logger.error(f"Could not load expenses: {e}")
         raise DatabaseError("Could not load expenses") from e
 
-async def save_fixed_expense(user_id: str, data: dict, access_token: str) -> Optional[dict]:
+def save_fixed_expense(user_id: str, data: dict, access_token: str) -> Optional[dict]:
     try:
         client = get_user_client(access_token)
         payload = {**data, "user_id": user_id}
@@ -28,7 +28,7 @@ async def save_fixed_expense(user_id: str, data: dict, access_token: str) -> Opt
         logger.error(f"Could not save expense: {e}")
         raise DatabaseError("Could not save expense") from e
 
-async def update_fixed_expense(expense_id: str, user_id: str, data: dict, access_token: str) -> Optional[dict]:
+def update_fixed_expense(expense_id: str, user_id: str, data: dict, access_token: str) -> Optional[dict]:
     try:
         client = get_user_client(access_token)
         response = (client.table("fixed_expenses").update(data)
@@ -38,5 +38,5 @@ async def update_fixed_expense(expense_id: str, user_id: str, data: dict, access
         logger.error(f"Could not update expense: {e}")
         raise DatabaseError("Could not update expense") from e
 
-async def deactivate_fixed_expense(expense_id: str, user_id: str, access_token: str) -> Optional[dict]:
-    return await update_fixed_expense(expense_id, user_id, {"is_active": False}, access_token)
+def deactivate_fixed_expense(expense_id: str, user_id: str, access_token: str) -> Optional[dict]:
+    return update_fixed_expense(expense_id, user_id, {"is_active": False}, access_token)

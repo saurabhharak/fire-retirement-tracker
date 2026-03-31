@@ -8,38 +8,7 @@ import math
 from datetime import date
 
 from app.core.constants import BUCKET_PERCENTAGES, FUNDS, SWR_SCENARIOS, SWR_VERDICTS
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def format_indian(amount: float) -> str:
-    """Format a number in Indian comma notation (e.g. 1,30,20,768).
-
-    Handles negative numbers and rounds to the nearest integer.
-    """
-    is_negative = amount < 0
-    n = int(round(abs(amount)))
-    s = str(n)
-
-    if len(s) <= 3:
-        result = s
-    else:
-        # Last 3 digits get their own group, then groups of 2 from the right
-        last3 = s[-3:]
-        remaining = s[:-3]
-        # Insert commas every 2 digits from the right in the remaining part
-        groups = []
-        while len(remaining) > 2:
-            groups.append(remaining[-2:])
-            remaining = remaining[:-2]
-        if remaining:
-            groups.append(remaining)
-        groups.reverse()
-        result = ",".join(groups) + "," + last3
-
-    return ("-" + result) if is_negative else result
+from app.core.formatting import format_indian
 
 
 # ---------------------------------------------------------------------------
