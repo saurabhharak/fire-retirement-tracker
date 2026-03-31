@@ -65,7 +65,7 @@ class FixedExpense(BaseModel):
 
     name: str = Field(max_length=100)
     amount: float = Field(gt=0)
-    frequency: Literal["monthly", "quarterly", "yearly"]
+    frequency: Literal["monthly", "quarterly", "yearly", "one-time"]
 
 
 class SipLogEntry(BaseModel):

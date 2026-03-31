@@ -79,7 +79,7 @@ CREATE TABLE public.fixed_expenses (
     user_id       uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     name          text        NOT NULL CHECK (char_length(name) <= 100),
     amount        numeric     NOT NULL CHECK (amount > 0),
-    frequency     text        NOT NULL CHECK (frequency IN ('monthly', 'quarterly', 'yearly')),
+    frequency     text        NOT NULL CHECK (frequency IN ('monthly', 'quarterly', 'yearly', 'one-time')),
     is_active     boolean     NOT NULL DEFAULT true,
     created_at    timestamptz NOT NULL DEFAULT now(),
     updated_at    timestamptz NOT NULL DEFAULT now()

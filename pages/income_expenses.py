@@ -157,8 +157,9 @@ if expenses:
                 else:
                     st.error("Failed to deactivate expense.")
 
-    # Total monthly fixed outflow
+    # Total monthly fixed outflow (excludes one-time expenses)
     total_monthly = 0.0
+    total_onetime = 0.0
     for exp in expenses:
         amount = exp["amount"]
         freq = exp["frequency"]
@@ -168,9 +169,16 @@ if expenses:
             total_monthly += amount / 3.0
         elif freq == "yearly":
             total_monthly += amount / 12.0
+        elif freq == "one-time":
+            total_onetime += amount
 
     st.markdown("---")
-    st.metric("Total Monthly Fixed Outflow", f"Rs {format_indian(total_monthly)}")
+    col_totals1, col_totals2 = st.columns(2)
+    with col_totals1:
+        st.metric("Monthly Recurring Outflow", f"Rs {format_indian(total_monthly)}")
+    with col_totals2:
+        if total_onetime > 0:
+            st.metric("One-time Expenses", f"Rs {format_indian(total_onetime)}")
 else:
     st.info("No active fixed expenses.")
     total_monthly = 0.0
@@ -192,7 +200,8 @@ with st.form("add_expense_form", clear_on_submit=True):
         )
     with exp_col4:
         expense_frequency = st.selectbox(
-            "Frequency", options=["monthly", "quarterly", "yearly"]
+            "Frequency", options=["monthly", "quarterly", "yearly", "one-time"],
+            format_func=lambda x: {"monthly": "Monthly", "quarterly": "Quarterly", "yearly": "Yearly", "one-time": "One-time"}[x]
         )
 
     submitted_expense = st.form_submit_button(
