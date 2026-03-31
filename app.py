@@ -71,28 +71,6 @@ st.markdown("""
 # SECURITY: Only hardcoded CSS above. No user-controlled data injected.
 
 from auth import check_idle_timeout, check_session, is_authenticated, logout
-from streamlit_cookies_controller import CookieController
-
-# ---------------------------------------------------------------------------
-# Cookie-based session persistence (survives page reload/tab close)
-# ---------------------------------------------------------------------------
-cookies = CookieController()
-
-if not is_authenticated():
-    # Try restoring session from browser cookies
-    saved_at = cookies.get("fire_access_token")
-    saved_rt = cookies.get("fire_refresh_token")
-    saved_uid = cookies.get("fire_user_id")
-    saved_email = cookies.get("fire_user_email")
-
-    if saved_at and saved_rt and saved_uid:
-        st.session_state["access_token"] = saved_at
-        st.session_state["refresh_token"] = saved_rt
-        st.session_state["user_id"] = saved_uid
-        st.session_state["user_email"] = saved_email or ""
-        from datetime import datetime, timezone
-        st.session_state["last_activity"] = datetime.now(timezone.utc)
-        st.rerun()
 
 
 # ---------------------------------------------------------------------------
