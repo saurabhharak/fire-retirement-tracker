@@ -12,3 +12,6 @@ build/
 *.xlsx
 ~$*.xlsx
 xlsx_extract/
+frontend/node_modules/
+frontend/dist/
+frontend/.env

@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --prosperity-green: #00895E;
+    --prosperity-gold: #D4A843;
+    --prosperity-blue: #1A3A5C;
+    --prosperity-navy: #0D1B2A;
+    --prosperity-teal: #132E3D;
+    --prosperity-silver: #E8ECF1;
+    --prosperity-success: #2E8B57;
+    --prosperity-warning: #E5A100;
+    --prosperity-error: #C45B5B;
+  }
+
+  body {
+    background-color: var(--prosperity-navy);
+    color: var(--prosperity-silver);
+    font-family: "DM Sans", "Inter", system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+}
