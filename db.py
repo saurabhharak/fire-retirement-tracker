@@ -17,16 +17,26 @@ from dotenv import load_dotenv
 from supabase import Client, create_client
 
 # ---------------------------------------------------------------------------
-# Environment
+# Environment — supports both .env (local) and st.secrets (Streamlit Cloud)
 # ---------------------------------------------------------------------------
 load_dotenv()
 
-SUPABASE_URL: str = os.environ.get("SUPABASE_URL", "")
-SUPABASE_KEY: str = os.environ.get("SUPABASE_KEY", "")
+
+def _get_secret(key: str) -> str:
+    """Try st.secrets first (Streamlit Cloud), then os.environ (.env local)."""
+    try:
+        return st.secrets[key]
+    except (KeyError, FileNotFoundError):
+        return os.environ.get(key, "")
+
+
+SUPABASE_URL: str = _get_secret("SUPABASE_URL")
+SUPABASE_KEY: str = _get_secret("SUPABASE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise EnvironmentError(
-        "SUPABASE_URL and SUPABASE_KEY must be set in the .env file."
+        "SUPABASE_URL and SUPABASE_KEY must be set in .env (local) or "
+        "Streamlit secrets (cloud deployment)."
     )
 
 
