@@ -1,12 +1,123 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
+import { useAuth } from "./hooks/useAuth";
+import { AppLayout } from "./layouts/AppLayout";
+import { AuthLayout } from "./layouts/AuthLayout";
+import Login from "./pages/Login";
+
+// Lazy load pages for bundle optimization
+import { lazy, Suspense } from "react";
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const IncomeExpenses = lazy(() => import("./pages/IncomeExpenses"));
+const FireSettings = lazy(() => import("./pages/FireSettings"));
+const FundAllocation = lazy(() => import("./pages/FundAllocation"));
+const GrowthProjection = lazy(() => import("./pages/GrowthProjection"));
+const RetirementAnalysis = lazy(() => import("./pages/RetirementAnalysis"));
+const SipTracker = lazy(() => import("./pages/SipTracker"));
+const SettingsPrivacy = lazy(() => import("./pages/SettingsPrivacy"));
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading)
+    return (
+      <div className="min-h-screen bg-[#0D1B2A] flex items-center justify-center text-[#E8ECF1]">
+        Loading...
+      </div>
+    );
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <AppLayout>{children}</AppLayout>;
+}
+
 function App() {
   return (
-    <div className="min-h-screen bg-[#0D1B2A] text-[#E8ECF1] flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">FIRE Retirement Tracker</h1>
-        <p className="text-[#D4A843] text-lg">Phase 2: React Frontend</p>
-        <p className="mt-2 text-sm opacity-60">Prosperity Theme Active</p>
-      </div>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Suspense
+          fallback={
+            <div className="min-h-screen bg-[#0D1B2A] flex items-center justify-center text-[#E8ECF1]">
+              Loading...
+            </div>
+          }
+        >
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <AuthLayout>
+                  <Login />
+                </AuthLayout>
+              }
+            />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/income-expenses"
+              element={
+                <ProtectedRoute>
+                  <IncomeExpenses />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/fire-settings"
+              element={
+                <ProtectedRoute>
+                  <FireSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/fund-allocation"
+              element={
+                <ProtectedRoute>
+                  <FundAllocation />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/growth-projection"
+              element={
+                <ProtectedRoute>
+                  <GrowthProjection />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/retirement-analysis"
+              element={
+                <ProtectedRoute>
+                  <RetirementAnalysis />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sip-tracker"
+              element={
+                <ProtectedRoute>
+                  <SipTracker />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings-privacy"
+              element={
+                <ProtectedRoute>
+                  <SettingsPrivacy />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 
