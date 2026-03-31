@@ -110,12 +110,19 @@ current_month = today.month
 current_year = today.year
 
 this_month_income = 0.0
+income_label = "This Month's Income"
 if income_entries:
     latest = income_entries[0]
-    if latest.get("month") == current_month and latest.get("year") == current_year:
-        this_month_income = float(latest.get("your_income", 0)) + float(
-            latest.get("wife_income", 0)
-        )
+    latest_month = latest.get("month", 0)
+    latest_year = latest.get("year", 0)
+    # Show most recent income entry (handles timezone differences)
+    this_month_income = float(latest.get("your_income", 0)) + float(
+        latest.get("wife_income", 0)
+    )
+    month_names = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    if latest_month != current_month or latest_year != current_year:
+        income_label = f"Latest Income ({month_names[latest_month]} {latest_year})"
 
 fixed_expense_total = _compute_monthly_expense_total(fixed_expenses)
 monthly_savings = this_month_income - fixed_expense_total
@@ -123,7 +130,7 @@ savings_rate = (monthly_savings / this_month_income * 100) if this_month_income 
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric("This Month's Income", f"Rs {format_indian(this_month_income)}")
+    st.metric(income_label, f"Rs {format_indian(this_month_income)}")
 with col2:
     st.metric("Fixed Expenses", f"Rs {format_indian(fixed_expense_total)}")
 with col3:
