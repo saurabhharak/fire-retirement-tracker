@@ -1,6 +1,8 @@
 """Application settings using pydantic-settings (12-factor compliant)."""
 
 from functools import lru_cache
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,12 +13,19 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    supabase_url: str = ""
-    supabase_key: str = ""
-    supabase_jwt_secret: str = ""
+    supabase_url: str
+    supabase_key: str
+    supabase_jwt_secret: str
     environment: str = "production"
     log_level: str = "INFO"
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+
+    @field_validator("cors_origins")
+    @classmethod
+    def no_wildcard_with_credentials(cls, v):
+        if "*" in v:
+            raise ValueError("Wildcard CORS origin not allowed with credentials")
+        return v
 
     @property
     def is_development(self) -> bool:

@@ -5,6 +5,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.config import get_settings
 from app.exceptions import register_exception_handlers
@@ -20,22 +23,43 @@ async def lifespan(app: FastAPI):
     logging.info("Shutting down FIRE Tracker API")
 
 
+settings = get_settings()
+
 app = FastAPI(
     title="FIRE Retirement Tracker API",
     version="2.0.0",
     description="Financial Independence, Retire Early — REST API",
     lifespan=lifespan,
+    docs_url="/docs" if settings.is_development else None,
+    redoc_url="/redoc" if settings.is_development else None,
+    openapi_url="/openapi.json" if settings.is_development else None,
 )
 
+# Rate limiting
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # CORS
-settings = get_settings()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
+
+
+# Security headers middleware
+@app.middleware("http")
+async def security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["X-XSS-Protection"] = "0"
+    return response
+
 
 # Exception handlers
 register_exception_handlers(app)
@@ -44,7 +68,7 @@ register_exception_handlers(app)
 # Health check
 @app.get("/api/health")
 async def health_check():
-    return {"status": "ok", "version": "2.0.0"}
+    return {"status": "ok"}
 
 
 # Routers
