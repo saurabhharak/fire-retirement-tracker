@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from auth import get_current_user_id
 from db import (
     deactivate_fixed_expense,
+    delete_income_entry,
     load_fire_inputs,
     load_fixed_expenses,
     load_income_entries,
@@ -155,11 +156,22 @@ if income_entries:
                 "Notes", value=edit_data["notes"], max_chars=500, key="edit_income_notes"
             )
 
-            col_save, col_cancel = st.columns(2)
+            col_save, col_delete, col_cancel = st.columns(3)
             with col_save:
                 save_edit = st.form_submit_button("Save Changes", use_container_width=True)
+            with col_delete:
+                delete_edit = st.form_submit_button("Delete Entry", use_container_width=True)
             with col_cancel:
                 cancel_edit = st.form_submit_button("Cancel", use_container_width=True)
+
+        if delete_edit:
+            if delete_income_entry(user_id, edit_data["month"], edit_data["year"]):
+                log_audit(user_id, "delete_income", {"month": edit_data["month"], "year": edit_data["year"]})
+                st.success(f"Deleted {edit_month_name} {edit_data['year']} income entry.")
+                del st.session_state["editing_income"]
+                st.rerun()
+            else:
+                st.error("Failed to delete. Please try again.")
 
         if save_edit:
             updated = {

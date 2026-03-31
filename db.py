@@ -151,6 +151,23 @@ def save_income_entry(user_id: str, data: dict) -> Optional[dict]:
         return None
 
 
+def delete_income_entry(user_id: str, month: int, year: int) -> bool:
+    """Delete an income entry by user_id, month, and year.
+
+    Returns True on success, False on error.
+    """
+    try:
+        client = get_supabase_client()
+        client.table("income_entries").delete().eq(
+            "user_id", user_id
+        ).eq("month", month).eq("year", year).execute()
+        return True
+    except Exception as e:
+        logging.error(f"Could not delete income entry: {e}")
+        st.error("Could not delete income entry. Please try again.")
+        return False
+
+
 # ---------------------------------------------------------------------------
 # fixed_expenses
 # ---------------------------------------------------------------------------
