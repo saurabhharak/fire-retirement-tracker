@@ -180,24 +180,48 @@ def check_session() -> bool:
     if "access_token" not in st.session_state:
         return False
 
+    # The shared Supabase client (@st.cache_resource) does not retain
+    # per-user auth state between reruns. Instead of calling get_session()
+    # (which returns None on the shared client), we restore the session
+    # from session_state using the refresh token.
+    refresh_token = st.session_state.get("refresh_token")
+    if not refresh_token:
+        return False
+
     supabase = _get_supabase()
 
     try:
-        # get_session() returns the current session and auto-refreshes if the
-        # access token is expired but the refresh token is still valid.
-        response = supabase.auth.get_session()
+        # Set the session on the client using the stored tokens so RLS works
+        response = supabase.auth.set_session(
+            st.session_state["access_token"],
+            refresh_token,
+        )
 
-        if response is None:
+        if response is None or response.session is None:
             _clear_session()
             return False
 
-        # Update tokens in case they were refreshed.
-        st.session_state["access_token"] = response.access_token
-        st.session_state["refresh_token"] = response.refresh_token
+        # Update tokens in case they were refreshed
+        st.session_state["access_token"] = response.session.access_token
+        st.session_state["refresh_token"] = response.session.refresh_token
         _update_last_activity()
         return True
 
     except Exception:
+        # If set_session fails (e.g., token fully expired), session is dead
+        # but don't aggressively clear — the user might just need to re-login
+        # Only clear if both tokens are definitely invalid
+        try:
+            # Last resort: try refreshing directly
+            response = supabase.auth.refresh_session(refresh_token)
+            if response and response.session:
+                st.session_state["access_token"] = response.session.access_token
+                st.session_state["refresh_token"] = response.session.refresh_token
+                _update_last_activity()
+                return True
+        except Exception:
+            pass
+
         _clear_session()
         return False
 
