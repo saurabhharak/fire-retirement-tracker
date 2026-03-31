@@ -140,13 +140,13 @@ st.markdown("### FIRE Metrics")
 funded_ratio = metrics["funded_ratio"]
 # Color-code funded ratio
 if funded_ratio >= 1.0:
-    fr_color = "green"
+    fr_color = "#00895E"  # Prosperity green
     fr_label = "On Track"
 elif funded_ratio >= 0.75:
-    fr_color = "orange"
+    fr_color = "#E5A100"  # Amber gold (warning without negativity)
     fr_label = "Close"
 else:
-    fr_color = "red"
+    fr_color = "#C45B5B"  # Muted coral (avoids aggressive red - Vastu/Feng Shui)
     fr_label = "Behind"
 
 col1, col2, col3, col4 = st.columns(4)

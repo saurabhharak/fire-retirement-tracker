@@ -5,8 +5,13 @@ enableXsrfProtection = true
 gatherUsageStats = false
 
 [theme]
-primaryColor = "#2E7D32"
-backgroundColor = "#0E1117"
-secondaryBackgroundColor = "#1A1E2E"
-textColor = "#FAFAFA"
+# Prosperity-aligned palette: Vastu + Feng Shui 2026 + Cancer zodiac + UX psychology
+# Primary: Emerald Green (growth, Lakshmi, Vastu wealth)
+# Background: Deep Navy (Water element - critical for 2026 wealth luck)
+# Secondary: Dark Teal (Cancer sea green, depth)
+# Text: Silver White (Cancer's Moon color)
+primaryColor = "#00895E"
+backgroundColor = "#0D1B2A"
+secondaryBackgroundColor = "#132E3D"
+textColor = "#E8ECF1"
 font = "sans serif"

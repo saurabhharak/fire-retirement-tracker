@@ -11,7 +11,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="FIRE Retirement Tracker",
-    page_icon="\U0001F525",  # fire emoji
+    page_icon="\U0001F4CE",  # lotus/gem - Lakshmi prosperity symbol
     layout="wide",
 )
 
@@ -103,7 +103,7 @@ def login_page():
     """Render the login / signup form."""
     from gotrue.errors import AuthApiError
 
-    st.title("\U0001F525 FIRE Retirement Tracker")
+    st.title("\U0001F4CE FIRE Retirement Tracker")
     st.subheader("Sign in to continue")
 
     tab_otp, tab_login, tab_signup = st.tabs(["Email OTP", "Password Login", "Sign Up"])
@@ -266,14 +266,14 @@ else:
     # Authenticated: show full sidebar navigation.
     pg = st.navigation(
         [
-            st.Page("pages/dashboard.py", title="Dashboard", icon="\U0001F4CA", default=True),
-            st.Page("pages/income_expenses.py", title="Income & Expenses", icon="\U0001F4B0"),
-            st.Page("pages/fire_settings.py", title="FIRE Settings", icon="\U0001F3AF"),
-            st.Page("pages/fund_allocation.py", title="Fund Allocation", icon="\U0001F4C1"),
-            st.Page("pages/growth_projection.py", title="Growth Projection", icon="\U0001F4C8"),
-            st.Page("pages/retirement_analysis.py", title="Retirement Analysis", icon="\U0001F3D6\uFE0F"),
-            st.Page("pages/sip_tracker.py", title="SIP Tracker", icon="\U0001F4DD"),
-            st.Page("pages/settings_privacy.py", title="Settings & Privacy", icon="\U00002699\uFE0F"),
+            st.Page("pages/dashboard.py", title="Dashboard", icon="\U0001F3E6", default=True),  # 🏦 Bank
+            st.Page("pages/income_expenses.py", title="Income & Expenses", icon="\U0001FA99"),  # 🪙 Coin
+            st.Page("pages/fire_settings.py", title="FIRE Settings", icon="\U00002699\uFE0F"),  # ⚙️ Gear
+            st.Page("pages/fund_allocation.py", title="Fund Allocation", icon="\U0001F4BC"),  # 💼 Briefcase
+            st.Page("pages/growth_projection.py", title="Growth Projection", icon="\U0001F331"),  # 🌱 Seedling
+            st.Page("pages/retirement_analysis.py", title="Retirement Analysis", icon="\U0001F6E1\uFE0F"),  # 🛡️ Shield
+            st.Page("pages/sip_tracker.py", title="SIP Tracker", icon="\U0001F4CB"),  # 📋 Clipboard
+            st.Page("pages/settings_privacy.py", title="Settings & Privacy", icon="\U0001F510"),  # 🔐 Lock
         ]
     )
 
