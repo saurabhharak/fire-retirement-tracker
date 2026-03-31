@@ -17,7 +17,7 @@ def export_all_data(user_id: str, access_token: str) -> dict:
         }
         return data
     except Exception as e:
-        logger.error(f"Could not export data: {e}")
+        logger.error("Could not export data: %s", e)
         raise DatabaseError("Could not export user data") from e
 
 def delete_account_data(user_id: str, access_token: str) -> None:
@@ -27,5 +27,5 @@ def delete_account_data(user_id: str, access_token: str) -> None:
         for table in ["sip_log", "income_entries", "fixed_expenses", "fire_inputs", "audit_log"]:
             client.table(table).delete().eq("user_id", user_id).execute()
     except Exception as e:
-        logger.error(f"Could not delete account data: {e}")
+        logger.error("Could not delete account data: %s", e)
         raise DatabaseError("Could not delete account data") from e

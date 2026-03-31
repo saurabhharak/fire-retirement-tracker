@@ -14,7 +14,7 @@ def load_income_entries(user_id: str, access_token: str, limit: int = 12) -> lis
             .order("month", desc=True).limit(limit).execute())
         return response.data or []
     except Exception as e:
-        logger.error(f"Could not load income entries: {e}")
+        logger.error("Could not load income entries: %s", e)
         raise DatabaseError("Could not load income entries") from e
 
 def save_income_entry(user_id: str, data: dict, access_token: str) -> Optional[dict]:
@@ -25,7 +25,7 @@ def save_income_entry(user_id: str, data: dict, access_token: str) -> Optional[d
             .upsert(payload, on_conflict="user_id,month,year").execute())
         return response.data[0] if response.data else None
     except Exception as e:
-        logger.error(f"Could not save income entry: {e}")
+        logger.error("Could not save income entry: %s", e)
         raise DatabaseError("Could not save income entry") from e
 
 def delete_income_entry(user_id: str, month: int, year: int, access_token: str) -> bool:
@@ -34,5 +34,5 @@ def delete_income_entry(user_id: str, month: int, year: int, access_token: str) 
         client.table("income_entries").delete().eq("user_id", user_id).eq("month", month).eq("year", year).execute()
         return True
     except Exception as e:
-        logger.error(f"Could not delete income entry: {e}")
+        logger.error("Could not delete income entry: %s", e)
         raise DatabaseError("Could not delete income entry") from e

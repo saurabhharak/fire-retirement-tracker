@@ -1,0 +1,11 @@
+.env
+.env.*
+__pycache__
+.pytest_cache
+tests/
+*.pyc
+.git
+.gitignore
+*.md
+stitch-designs/
+docs/

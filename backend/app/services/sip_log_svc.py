@@ -14,7 +14,7 @@ def load_sip_logs(user_id: str, access_token: str, limit: int = 60) -> list[dict
             .order("month", desc=True).limit(limit).execute())
         return response.data or []
     except Exception as e:
-        logger.error(f"Could not load SIP logs: {e}")
+        logger.error("Could not load SIP logs: %s", e)
         raise DatabaseError("Could not load SIP logs") from e
 
 def save_sip_log(user_id: str, data: dict, access_token: str) -> Optional[dict]:
@@ -33,5 +33,5 @@ def save_sip_log(user_id: str, data: dict, access_token: str) -> Optional[dict]:
             client.table("sip_log_funds").insert(fund_rows).execute()
         return sip_log_row
     except Exception as e:
-        logger.error(f"Could not save SIP log: {e}")
+        logger.error("Could not save SIP log: %s", e)
         raise DatabaseError("Could not save SIP log") from e

@@ -14,7 +14,7 @@ def load_fire_inputs(user_id: str, access_token: str) -> Optional[dict]:
             return response.data[0]
         return None
     except Exception as e:
-        logger.error(f"Could not load fire inputs: {e}")
+        logger.error("Could not load fire inputs: %s", e)
         raise DatabaseError("Could not load FIRE settings") from e
 
 def save_fire_inputs(user_id: str, data: dict, access_token: str) -> dict:
@@ -28,5 +28,5 @@ def save_fire_inputs(user_id: str, data: dict, access_token: str) -> dict:
     except DatabaseError:
         raise
     except Exception as e:
-        logger.error(f"Could not save fire inputs: {e}")
+        logger.error("Could not save fire inputs: %s", e)
         raise DatabaseError("Could not save FIRE settings") from e

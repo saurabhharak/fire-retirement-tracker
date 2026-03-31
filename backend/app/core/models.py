@@ -84,6 +84,12 @@ class FixedExpenseUpdate(BaseModel):
     owner: Optional[str] = None
 
 
+class SipFund(BaseModel):
+    """Per-fund SIP amount."""
+    fund_name: str = Field(max_length=200)
+    amount: float = Field(ge=0)
+
+
 class SipLogEntry(BaseModel):
     """Monthly SIP tracking log entry."""
 
@@ -92,3 +98,4 @@ class SipLogEntry(BaseModel):
     planned_sip: float = Field(ge=0)
     actual_invested: float = Field(ge=0)
     notes: str = Field(max_length=500, default="")
+    funds: list[SipFund] = Field(default_factory=list)

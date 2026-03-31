@@ -15,7 +15,7 @@ def load_fixed_expenses(user_id: str, access_token: str, active_only: bool = Tru
         response = query.order("created_at", desc=True).execute()
         return response.data or []
     except Exception as e:
-        logger.error(f"Could not load expenses: {e}")
+        logger.error("Could not load expenses: %s", e)
         raise DatabaseError("Could not load expenses") from e
 
 def save_fixed_expense(user_id: str, data: dict, access_token: str) -> Optional[dict]:
@@ -25,7 +25,7 @@ def save_fixed_expense(user_id: str, data: dict, access_token: str) -> Optional[
         response = client.table("fixed_expenses").insert(payload).execute()
         return response.data[0] if response.data else None
     except Exception as e:
-        logger.error(f"Could not save expense: {e}")
+        logger.error("Could not save expense: %s", e)
         raise DatabaseError("Could not save expense") from e
 
 def update_fixed_expense(expense_id: str, user_id: str, data: dict, access_token: str) -> Optional[dict]:
@@ -35,7 +35,7 @@ def update_fixed_expense(expense_id: str, user_id: str, data: dict, access_token
             .eq("id", expense_id).eq("user_id", user_id).execute())
         return response.data[0] if response.data else None
     except Exception as e:
-        logger.error(f"Could not update expense: {e}")
+        logger.error("Could not update expense: %s", e)
         raise DatabaseError("Could not update expense") from e
 
 def deactivate_fixed_expense(expense_id: str, user_id: str, access_token: str) -> Optional[dict]:

@@ -1,10 +1,11 @@
 """Projection API routes -- computed from engine.py, not stored."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from app.core.engine import (
     compute_derived_inputs, compute_fund_allocation,
     compute_growth_projection, compute_monthly_sips, compute_retirement_metrics,
 )
 from app.dependencies import CurrentUser, get_current_user
+from app.rate_limit import limiter
 from app.services import fire_inputs_svc
 
 router = APIRouter(tags=["projections"])
@@ -16,12 +17,14 @@ def _get_inputs(user: CurrentUser) -> dict:
     return compute_derived_inputs(raw)
 
 @router.get("/projections/growth")
-async def get_growth_projection(user: CurrentUser = Depends(get_current_user)) -> dict:
+@limiter.limit("30/minute")
+async def get_growth_projection(request: Request, user: CurrentUser = Depends(get_current_user)) -> dict:
     inputs = _get_inputs(user)
     return {"data": compute_growth_projection(inputs)}
 
 @router.get("/projections/retirement")
-async def get_retirement_analysis(user: CurrentUser = Depends(get_current_user)) -> dict:
+@limiter.limit("30/minute")
+async def get_retirement_analysis(request: Request, user: CurrentUser = Depends(get_current_user)) -> dict:
     inputs = _get_inputs(user)
     projection = compute_growth_projection(inputs)
     years = inputs["years_to_retirement"]
@@ -29,11 +32,13 @@ async def get_retirement_analysis(user: CurrentUser = Depends(get_current_user))
     return {"data": compute_retirement_metrics(inputs, corpus)}
 
 @router.get("/projections/fund-allocation")
-async def get_fund_allocation(user: CurrentUser = Depends(get_current_user)) -> dict:
+@limiter.limit("30/minute")
+async def get_fund_allocation(request: Request, user: CurrentUser = Depends(get_current_user)) -> dict:
     inputs = _get_inputs(user)
     return {"data": compute_fund_allocation(inputs)}
 
 @router.get("/projections/monthly-sips")
-async def get_monthly_sips(user: CurrentUser = Depends(get_current_user)) -> dict:
+@limiter.limit("30/minute")
+async def get_monthly_sips(request: Request, user: CurrentUser = Depends(get_current_user)) -> dict:
     inputs = _get_inputs(user)
     return {"data": compute_monthly_sips(inputs)}
