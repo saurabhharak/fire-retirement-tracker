@@ -98,27 +98,89 @@ if submitted_income:
         for err in exc.errors():
             st.error(f"{err['loc'][0]}: {err['msg']}")
 
-# Table of last 12 months
+# Table of last 12 months with edit capability
 st.subheader("Recent Income Entries")
 income_entries = load_income_entries(user_id, limit=12)
 
 if income_entries:
-    income_rows = []
-    for e in income_entries:
+    for idx, e in enumerate(income_entries):
         month_name = datetime.date(2000, e["month"], 1).strftime("%B")
-        income_rows.append(
-            {
-                "Month": month_name,
-                "Year": e["year"],
-                "Your Income": format_indian(e["your_income"]),
-                "Wife's Income": format_indian(e["wife_income"]),
-                "Total": format_indian(e["your_income"] + e["wife_income"]),
-                "Notes": e.get("notes", ""),
+        total = float(e["your_income"]) + float(e["wife_income"])
+
+        col_m, col_y, col_yours, col_wife, col_total, col_notes, col_edit = st.columns([1.5, 1, 1.5, 1.5, 1.5, 2, 0.8])
+        with col_m:
+            st.text(month_name)
+        with col_y:
+            st.text(str(e["year"]))
+        with col_yours:
+            st.text(format_indian(e["your_income"]))
+        with col_wife:
+            st.text(format_indian(e["wife_income"]))
+        with col_total:
+            st.text(format_indian(total))
+        with col_notes:
+            st.text(e.get("notes", "") or "-")
+        with col_edit:
+            if st.button("Edit", key=f"edit_income_{idx}"):
+                st.session_state["editing_income"] = {
+                    "month": e["month"],
+                    "year": e["year"],
+                    "your_income": float(e["your_income"]),
+                    "wife_income": float(e["wife_income"]),
+                    "notes": e.get("notes", ""),
+                }
+                st.rerun()
+
+    # Edit form (shown when an entry is selected for editing)
+    if "editing_income" in st.session_state:
+        edit_data = st.session_state["editing_income"]
+        edit_month_name = datetime.date(2000, edit_data["month"], 1).strftime("%B")
+        st.markdown(f"---\n**Editing: {edit_month_name} {edit_data['year']}**")
+
+        with st.form("edit_income_form"):
+            edit_col1, edit_col2 = st.columns(2)
+            with edit_col1:
+                edit_your = st.number_input(
+                    "Your Income", min_value=0.0,
+                    value=edit_data["your_income"], step=1000.0, format="%.0f",
+                    key="edit_your_income"
+                )
+            with edit_col2:
+                edit_wife = st.number_input(
+                    "Wife's Income", min_value=0.0,
+                    value=edit_data["wife_income"], step=1000.0, format="%.0f",
+                    key="edit_wife_income"
+                )
+            edit_notes = st.text_input(
+                "Notes", value=edit_data["notes"], max_chars=500, key="edit_income_notes"
+            )
+
+            col_save, col_cancel = st.columns(2)
+            with col_save:
+                save_edit = st.form_submit_button("Save Changes", use_container_width=True)
+            with col_cancel:
+                cancel_edit = st.form_submit_button("Cancel", use_container_width=True)
+
+        if save_edit:
+            updated = {
+                "month": edit_data["month"],
+                "year": edit_data["year"],
+                "your_income": edit_your,
+                "wife_income": edit_wife,
+                "notes": edit_notes,
             }
-        )
-    st.dataframe(
-        pd.DataFrame(income_rows), use_container_width=True, hide_index=True
-    )
+            result = save_income_entry(user_id, updated)
+            if result:
+                log_audit(user_id, "edit_income", {"month": edit_data["month"], "year": edit_data["year"]})
+                st.success(f"Updated {edit_month_name} {edit_data['year']} income.")
+                del st.session_state["editing_income"]
+                st.rerun()
+            else:
+                st.error("Failed to update. Please try again.")
+
+        if cancel_edit:
+            del st.session_state["editing_income"]
+            st.rerun()
 else:
     st.info("No income entries yet. Use the form above to add your first entry.")
 
