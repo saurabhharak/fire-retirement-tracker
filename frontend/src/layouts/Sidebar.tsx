@@ -52,6 +52,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={onClose}
+          role="dialog"
+          aria-modal="true"
         />
       )}
 
@@ -70,6 +72,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <button
             className="md:hidden p-1 rounded text-[#E8ECF1]/60 hover:text-[#E8ECF1]"
             onClick={onClose}
+            aria-label="Close navigation menu"
           >
             <X size={20} />
           </button>

@@ -8,6 +8,7 @@ import {
   Cell,
 } from "recharts";
 import { useRetirementAnalysis } from "../hooks/useProjections";
+import { useFireInputs } from "../hooks/useFireInputs";
 import { PageHeader } from "../components/PageHeader";
 import { MetricCard } from "../components/MetricCard";
 import { LoadingState } from "../components/LoadingState";
@@ -71,6 +72,7 @@ function VerdictBadge({ verdict }: { verdict: string }) {
 
 export default function RetirementAnalysis() {
   const { data, isLoading } = useRetirementAnalysis();
+  const fireInputs = useFireInputs();
 
   if (isLoading) return <LoadingState message="Analysing retirement readiness..." />;
   if (!data)
@@ -175,7 +177,7 @@ export default function RetirementAnalysis() {
             </thead>
             <tbody>
               {data.swr_scenarios.map((s) => {
-                const isHighlighted = s.rate === 0.03;
+                const isHighlighted = s.rate === (fireInputs.data?.swr ?? 0.03);
                 return (
                   <tr
                     key={s.rate}

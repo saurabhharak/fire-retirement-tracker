@@ -13,6 +13,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <button
           className="md:hidden mb-4 p-2 rounded-lg bg-[#132E3D] text-[#E8ECF1]"
           onClick={() => setSidebarOpen(true)}
+          aria-label="Open navigation menu"
         >
           <Menu size={24} />
         </button>

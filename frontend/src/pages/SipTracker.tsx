@@ -13,16 +13,16 @@ const MONTHS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-const currentDate = new Date();
-const currentMonth = currentDate.getMonth() + 1;
-const currentYear = currentDate.getFullYear();
-
-function getNextSipDate(): string {
+function getNextSipDate(currentDate: Date, currentYear: number): string {
   const next = new Date(currentYear, currentDate.getMonth() + 1, 1);
   return `${MONTHS[next.getMonth()]} ${next.getFullYear()}`;
 }
 
 export default function SipTracker() {
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
+
   const { entries, isLoading, save } = useSipLog();
   const { data: monthlySips } = useMonthlySips();
 
@@ -81,7 +81,7 @@ export default function SipTracker() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
         <MetricCard label="Total Invested" value={totalInvested} color="gold" />
         <MetricCard label="Monthly Target" value={monthlyTarget} color="success" />
-        <MetricCard label="Next SIP Date" value={0} prefix="" suffix={getNextSipDate()} />
+        <MetricCard label="Next SIP Date" value={0} prefix="" suffix={getNextSipDate(currentDate, currentYear)} />
       </div>
 
       {/* Log Form */}

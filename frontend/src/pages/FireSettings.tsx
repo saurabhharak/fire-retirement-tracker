@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useFireInputs, type FireInputsData } from "../hooks/useFireInputs";
 import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
@@ -85,6 +85,9 @@ export default function FireSettings() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
     "idle"
   );
+  const timeoutRef = useRef<number>();
+
+  useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
 
   useEffect(() => {
     if (data) {
@@ -155,10 +158,10 @@ export default function FireSettings() {
       setSaveStatus("idle");
       await save(form);
       setSaveStatus("success");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      timeoutRef.current = window.setTimeout(() => setSaveStatus("idle"), 3000);
     } catch {
       setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      timeoutRef.current = window.setTimeout(() => setSaveStatus("idle"), 3000);
     }
   }
 

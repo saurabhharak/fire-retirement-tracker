@@ -16,6 +16,7 @@ import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
 import { EmptyState } from "../components/EmptyState";
 import { formatRupees, formatIndian } from "../lib/formatIndian";
+import { toMonthlyAmount } from "../lib/expenseUtils";
 
 const MONTH_NAMES = [
   "January",
@@ -31,19 +32,6 @@ const MONTH_NAMES = [
   "November",
   "December",
 ];
-
-function toMonthly(amount: number, frequency: string): number {
-  switch (frequency) {
-    case "monthly":
-      return amount;
-    case "quarterly":
-      return amount / 3;
-    case "yearly":
-      return amount / 12;
-    default:
-      return 0;
-  }
-}
 
 const PIE_COLORS = {
   sip: "#00895E",
@@ -120,7 +108,7 @@ export default function IncomeExpenses() {
   const totalSip = (inputs?.your_sip ?? 0) + (inputs?.wife_sip ?? 0);
 
   const fixedExpenseMonthly = expenses.entries.reduce(
-    (sum: number, e: FixedExpense) => sum + toMonthly(e.amount, e.frequency),
+    (sum: number, e: FixedExpense) => sum + toMonthlyAmount(e.amount, e.frequency),
     0
   );
 
@@ -131,13 +119,13 @@ export default function IncomeExpenses() {
   /* Expense breakdown by owner */
   const yourExpenses = expenses.entries
     .filter((e: FixedExpense) => e.owner === "you")
-    .reduce((sum: number, e: FixedExpense) => sum + toMonthly(e.amount, e.frequency), 0);
+    .reduce((sum: number, e: FixedExpense) => sum + toMonthlyAmount(e.amount, e.frequency), 0);
   const wifeExpenses = expenses.entries
     .filter((e: FixedExpense) => e.owner === "wife")
-    .reduce((sum: number, e: FixedExpense) => sum + toMonthly(e.amount, e.frequency), 0);
+    .reduce((sum: number, e: FixedExpense) => sum + toMonthlyAmount(e.amount, e.frequency), 0);
   const householdExpenses = expenses.entries
     .filter((e: FixedExpense) => e.owner === "household" || (!e.owner))
-    .reduce((sum: number, e: FixedExpense) => sum + toMonthly(e.amount, e.frequency), 0);
+    .reduce((sum: number, e: FixedExpense) => sum + toMonthlyAmount(e.amount, e.frequency), 0);
 
   /* Pie chart data */
   const pieData = [
@@ -725,7 +713,7 @@ export default function IncomeExpenses() {
                       {expense.frequency}
                     </td>
                     <td className="py-3 px-2 text-right text-[#E8ECF1]/60">
-                      {formatRupees(Math.round(toMonthly(expense.amount, expense.frequency)))}
+                      {formatRupees(Math.round(toMonthlyAmount(expense.amount, expense.frequency)))}
                     </td>
                     <td className="py-3 px-2 text-right">
                       <button

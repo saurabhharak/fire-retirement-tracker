@@ -3,7 +3,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { AppLayout } from "./layouts/AppLayout";
-import { AuthLayout } from "./layouts/AuthLayout";
 import Login from "./pages/Login";
 
 // Lazy load pages for bundle optimization
@@ -44,11 +43,7 @@ function App() {
           <Routes>
             <Route
               path="/login"
-              element={
-                <AuthLayout>
-                  <Login />
-                </AuthLayout>
-              }
+              element={<Login />}
             />
             <Route
               path="/"

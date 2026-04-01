@@ -20,6 +20,7 @@ import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
 import { EmptyState } from "../components/EmptyState";
 import { formatRupees, formatIndian } from "../lib/formatIndian";
+import { toMonthlyAmount } from "../lib/expenseUtils";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -84,18 +85,8 @@ export default function Dashboard() {
 
   // Expenses: sum all active monthly-equivalent expenses
   const fixedExpenseTotal = expenses.entries.reduce(
-    (sum: number, e: { amount: number; frequency: string }) => {
-      switch (e.frequency) {
-        case "monthly":
-          return sum + e.amount;
-        case "quarterly":
-          return sum + e.amount / 3;
-        case "yearly":
-          return sum + e.amount / 12;
-        default:
-          return sum;
-      }
-    },
+    (sum: number, e: { amount: number; frequency: string }) =>
+      sum + toMonthlyAmount(e.amount, e.frequency),
     0
   );
 
