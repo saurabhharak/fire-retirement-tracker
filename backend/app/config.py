@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     supabase_url: str
     supabase_key: str
-    supabase_jwt_secret: str
+    supabase_jwt_secret: str = ""  # Optional: only needed for legacy HS256 verification
     environment: str = "production"
     log_level: str = "INFO"
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
