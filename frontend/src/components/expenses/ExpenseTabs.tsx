@@ -14,10 +14,12 @@ const tabs: { value: ExpenseTab; label: string }[] = [
 
 export function ExpenseTabs({ activeTab, onChange }: ExpenseTabsProps) {
   return (
-    <div className="flex gap-1 border-b border-[#1A3A5C]/30 mb-6">
+    <div role="tablist" className="flex gap-1 border-b border-[#1A3A5C]/30 mb-6">
       {tabs.map((tab) => (
         <button
           key={tab.value}
+          role="tab"
+          aria-selected={activeTab === tab.value}
           onClick={() => onChange(tab.value)}
           className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
             activeTab === tab.value

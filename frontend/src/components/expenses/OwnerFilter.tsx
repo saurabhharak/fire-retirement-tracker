@@ -16,10 +16,12 @@ export type { OwnerOption };
 
 export function OwnerFilter({ selected, onChange }: OwnerFilterProps) {
   return (
-    <div className="flex gap-1 bg-[#132E3D] rounded-lg p-1 border border-[#1A3A5C]/30">
+    <div role="radiogroup" aria-label="Filter by owner" className="flex gap-1 bg-[#132E3D] rounded-lg p-1 border border-[#1A3A5C]/30">
       {options.map((opt) => (
         <button
           key={opt.value}
+          role="radio"
+          aria-checked={selected === opt.value}
           onClick={() => onChange(opt.value)}
           className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
             selected === opt.value

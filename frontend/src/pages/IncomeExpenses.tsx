@@ -5,7 +5,7 @@ import type { FixedExpense } from "../hooks/useExpenses";
 import { useFireInputs } from "../hooks/useFireInputs";
 import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
-import { toMonthlyAmount, isExpenseInMonth, getExpenseAmountForMonth } from "../lib/expenseUtils";
+import { effectiveMonthlyAmount, isExpenseInMonth } from "../lib/expenseUtils";
 
 import { MonthNavigator } from "../components/expenses/MonthNavigator";
 import { OwnerFilter } from "../components/expenses/OwnerFilter";
@@ -45,10 +45,15 @@ export default function IncomeExpenses() {
   }
 
   /* ---------- Derived Calculations ---------- */
-  const latestIncome = income.entries.length > 0 ? income.entries[0] : null;
-  const yourIncome = latestIncome?.your_income ?? 0;
-  const wifeIncome = latestIncome?.wife_income ?? 0;
+
+  // M7: Filter income to match selected month/year instead of always using latest
+  const matchedIncome = income.entries.find(
+    (e) => e.month === selectedMonth && e.year === selectedYear,
+  );
+  const yourIncome = matchedIncome?.your_income ?? 0;
+  const wifeIncome = matchedIncome?.wife_income ?? 0;
   const totalIncome = yourIncome + wifeIncome;
+  const noIncomeForMonth = !matchedIncome;
 
   const inputs = fireInputs.data;
   const totalSip = (inputs?.your_sip ?? 0) + (inputs?.wife_sip ?? 0);
@@ -76,55 +81,54 @@ export default function IncomeExpenses() {
     return list;
   }, [expenses.entries, selectedMonth, selectedYear, ownerFilter, activeTab]);
 
-  /* Calculate monthly totals from ALL active expenses (unfiltered by owner/tab) */
-  const allMonthExpenses = (expenses.entries as FixedExpense[]).filter((e) =>
-    isExpenseInMonth(e, selectedMonth, selectedYear),
+  // M8: Memoize allMonthExpenses
+  const allMonthExpenses = useMemo(
+    () =>
+      (expenses.entries as FixedExpense[]).filter((e) =>
+        isExpenseInMonth(e, selectedMonth, selectedYear),
+      ),
+    [expenses.entries, selectedMonth, selectedYear],
   );
 
-  const fixedExpenseMonthly = allMonthExpenses.reduce((sum: number, e: FixedExpense) => {
-    if (e.frequency === "one-time") {
-      return sum + getExpenseAmountForMonth(e.amount, e.frequency);
-    }
-    return sum + toMonthlyAmount(e.amount, e.frequency);
-  }, 0);
+  // M8: Memoize owner totals and fixedExpenseMonthly
+  const { fixedExpenseMonthly, yourExpenses, wifeExpenses, householdExpenses } = useMemo(() => {
+    const total = allMonthExpenses.reduce(
+      (sum: number, e: FixedExpense) => sum + effectiveMonthlyAmount(e.amount, e.frequency),
+      0,
+    );
+    const you = allMonthExpenses
+      .filter((e: FixedExpense) => e.owner === "you")
+      .reduce((sum: number, e: FixedExpense) => sum + effectiveMonthlyAmount(e.amount, e.frequency), 0);
+    const wife = allMonthExpenses
+      .filter((e: FixedExpense) => e.owner === "wife")
+      .reduce((sum: number, e: FixedExpense) => sum + effectiveMonthlyAmount(e.amount, e.frequency), 0);
+    const household = allMonthExpenses
+      .filter((e: FixedExpense) => e.owner === "household" || !e.owner)
+      .reduce((sum: number, e: FixedExpense) => sum + effectiveMonthlyAmount(e.amount, e.frequency), 0);
+    return { fixedExpenseMonthly: total, yourExpenses: you, wifeExpenses: wife, householdExpenses: household };
+  }, [allMonthExpenses]);
 
   const totalOutflow = fixedExpenseMonthly + totalSip;
   const savings = totalIncome - totalOutflow;
   const savingsRate =
     totalIncome > 0 ? Math.round((savings / totalIncome) * 1000) / 10 : 0;
 
-  /* Expense breakdown by owner */
-  const yourExpenses = allMonthExpenses
-    .filter((e: FixedExpense) => e.owner === "you")
-    .reduce((sum: number, e: FixedExpense) => {
-      if (e.frequency === "one-time") return sum + getExpenseAmountForMonth(e.amount, e.frequency);
-      return sum + toMonthlyAmount(e.amount, e.frequency);
-    }, 0);
-  const wifeExpenses = allMonthExpenses
-    .filter((e: FixedExpense) => e.owner === "wife")
-    .reduce((sum: number, e: FixedExpense) => {
-      if (e.frequency === "one-time") return sum + getExpenseAmountForMonth(e.amount, e.frequency);
-      return sum + toMonthlyAmount(e.amount, e.frequency);
-    }, 0);
-  const householdExpenses = allMonthExpenses
-    .filter((e: FixedExpense) => e.owner === "household" || !e.owner)
-    .reduce((sum: number, e: FixedExpense) => {
-      if (e.frequency === "one-time") return sum + getExpenseAmountForMonth(e.amount, e.frequency);
-      return sum + toMonthlyAmount(e.amount, e.frequency);
-    }, 0);
-
-  /* Pie chart data */
-  const pieData = [
-    { name: "SIP", value: Math.round(totalSip), color: PIE_COLORS.sip },
-    { name: "Your Expenses", value: Math.round(yourExpenses), color: PIE_COLORS.your },
-    { name: "Wife Expenses", value: Math.round(wifeExpenses), color: PIE_COLORS.wife },
-    { name: "Household", value: Math.round(householdExpenses), color: PIE_COLORS.household },
-    {
-      name: "Savings",
-      value: Math.round(Math.max(0, savings - totalSip)),
-      color: PIE_COLORS.savings,
-    },
-  ].filter((d) => d.value > 0);
+  // M8: Memoize pieData
+  const pieData = useMemo(
+    () =>
+      [
+        { name: "SIP", value: Math.round(totalSip), color: PIE_COLORS.sip },
+        { name: "Your Expenses", value: Math.round(yourExpenses), color: PIE_COLORS.your },
+        { name: "Wife Expenses", value: Math.round(wifeExpenses), color: PIE_COLORS.wife },
+        { name: "Household", value: Math.round(householdExpenses), color: PIE_COLORS.household },
+        {
+          name: "Savings",
+          value: Math.round(Math.max(0, savings - totalSip)),
+          color: PIE_COLORS.savings,
+        },
+      ].filter((d) => d.value > 0),
+    [totalSip, yourExpenses, wifeExpenses, householdExpenses, savings],
+  );
 
   /* Handlers */
   async function handleExpenseDeactivate(id: string) {
@@ -154,6 +158,7 @@ export default function IncomeExpenses() {
         totalOutflow={Math.round(totalOutflow)}
         savings={Math.round(savings)}
         savingsRate={savingsRate}
+        noIncomeForMonth={noIncomeForMonth}
       />
 
       {/* Money Flow Chart */}

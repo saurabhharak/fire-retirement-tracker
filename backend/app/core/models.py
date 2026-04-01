@@ -86,7 +86,11 @@ class FixedExpense(BaseModel):
 
 
 class FixedExpenseUpdate(BaseModel):
-    """Partial update model for fixed expenses."""
+    """Partial update model for fixed expenses.
+
+    Note: The DB has a CHECK constraint that also enforces month/year for
+    one-time expenses, so this validator is a secondary safety net.
+    """
     name: Optional[str] = Field(None, max_length=100)
     amount: Optional[float] = Field(None, gt=0)
     frequency: Optional[Literal["monthly", "quarterly", "yearly", "one-time"]] = None
@@ -94,6 +98,15 @@ class FixedExpenseUpdate(BaseModel):
     owner: Optional[Literal["you", "wife", "household"]] = None
     expense_month: Optional[int] = Field(None, ge=1, le=12)
     expense_year: Optional[int] = Field(None, ge=2020, le=2100)
+
+    @model_validator(mode="after")
+    def one_time_requires_month_year(self):
+        if self.frequency == "one-time":
+            if self.expense_month is None or self.expense_year is None:
+                raise ValueError(
+                    "Updating frequency to 'one-time' requires expense_month and expense_year"
+                )
+        return self
 
 
 class SipFund(BaseModel):

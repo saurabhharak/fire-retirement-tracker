@@ -1,11 +1,7 @@
 import type { FixedExpense } from "../../hooks/useExpenses";
 import { formatRupees } from "../../lib/formatIndian";
-import { toMonthlyAmount, getExpenseAmountForMonth } from "../../lib/expenseUtils";
-
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+import { effectiveMonthlyAmount } from "../../lib/expenseUtils";
+import { MONTH_NAMES } from "../../lib/constants";
 
 interface ExpenseTableProps {
   expenses: FixedExpense[];
@@ -75,9 +71,7 @@ export function ExpenseTable({ expenses, showOneTime, onDeactivate, onEdit }: Ex
                 </td>
               )}
               <td className="py-3 px-2 text-right text-[#E8ECF1]/60">
-                {expense.frequency === "one-time"
-                  ? formatRupees(Math.round(getExpenseAmountForMonth(expense.amount, expense.frequency)))
-                  : formatRupees(Math.round(toMonthlyAmount(expense.amount, expense.frequency)))}
+                {formatRupees(Math.round(effectiveMonthlyAmount(expense.amount, expense.frequency)))}
               </td>
               <td className="py-3 px-2 text-right space-x-2">
                 {onEdit && (
@@ -90,7 +84,8 @@ export function ExpenseTable({ expenses, showOneTime, onDeactivate, onEdit }: Ex
                 )}
                 <button
                   onClick={() => expense.id && onDeactivate(expense.id)}
-                  className="text-[#E5A100] hover:text-[#E5A100]/80 text-xs font-medium"
+                  disabled={!expense.id}
+                  className="text-[#E5A100] hover:text-[#E5A100]/80 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Deactivate
                 </button>

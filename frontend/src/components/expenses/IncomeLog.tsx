@@ -1,12 +1,8 @@
 import { useState } from "react";
 import type { IncomeEntry } from "../../hooks/useIncome";
 import { formatRupees } from "../../lib/formatIndian";
+import { MONTH_NAMES } from "../../lib/constants";
 import { EmptyState } from "../EmptyState";
-
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 
 interface IncomeFormState {
   month: number;
@@ -40,11 +36,14 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
   const [incomeForm, setIncomeForm] = useState<IncomeFormState>(emptyIncomeForm());
   const [editingIncome, setEditingIncome] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<IncomeFormState>(emptyIncomeForm());
-  const [saving, setSaving] = useState(false);
+  const [savingAdd, setSavingAdd] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
+    setError(null);
+    setSavingAdd(true);
     try {
       await onSave({
         month: incomeForm.month,
@@ -55,14 +54,16 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
       });
       setIncomeForm(emptyIncomeForm());
       setShowForm(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save income entry");
     } finally {
-      setSaving(false);
+      setSavingAdd(false);
     }
   }
 
-  async function handleEdit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
+  async function handleEdit() {
+    setError(null);
+    setSavingEdit(true);
     try {
       await onSave({
         month: editForm.month,
@@ -72,8 +73,10 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
         notes: editForm.notes,
       });
       setEditingIncome(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update income entry");
     } finally {
-      setSaving(false);
+      setSavingEdit(false);
     }
   }
 
@@ -162,10 +165,16 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
               className={inputCls}
             />
           </div>
-          <button type="submit" disabled={saving} className={btnPrimary}>
-            {saving ? "Saving..." : "Save"}
+          <button type="submit" disabled={savingAdd} className={btnPrimary}>
+            {savingAdd ? "Saving..." : "Save"}
           </button>
         </form>
+      )}
+
+      {error && (
+        <div className="mb-4 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+          {error}
+        </div>
       )}
 
       {entries.length === 0 ? (
@@ -230,7 +239,7 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
                       <td className="py-2 px-2 text-right space-x-2">
                         <button
                           onClick={handleEdit}
-                          disabled={saving}
+                          disabled={savingEdit}
                           className="text-[#00895E] hover:text-[#00895E]/80 text-xs font-medium"
                         >
                           Save

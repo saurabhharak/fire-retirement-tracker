@@ -10,6 +10,7 @@ interface FinancialSummaryProps {
   totalOutflow: number;
   savings: number;
   savingsRate: number;
+  noIncomeForMonth?: boolean;
 }
 
 export function FinancialSummary({
@@ -21,12 +22,18 @@ export function FinancialSummary({
   totalOutflow,
   savings,
   savingsRate,
+  noIncomeForMonth,
 }: FinancialSummaryProps) {
   return (
     <section>
       <h2 className="text-lg font-semibold text-[#E8ECF1] mb-4">
         Financial Summary
       </h2>
+      {noIncomeForMonth && (
+        <p className="text-sm text-[#E5A100] mb-3">
+          No income recorded for this month. Showing zeros for income fields.
+        </p>
+      )}
       {/* Income row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <MetricCard label="Your Income" value={yourIncome} />
