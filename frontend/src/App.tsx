@@ -17,25 +17,13 @@ const SipTracker = lazy(() => import("./pages/SipTracker"));
 const SettingsPrivacy = lazy(() => import("./pages/SettingsPrivacy"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading)
-    return (
-      <div className="min-h-screen bg-[#0D1B2A] flex items-center justify-center text-[#E8ECF1]">
-        Loading...
-      </div>
-    );
+  const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <AppLayout>{children}</AppLayout>;
 }
 
 function LoginRoute() {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading)
-    return (
-      <div className="min-h-screen bg-[#0D1B2A] flex items-center justify-center text-[#E8ECF1]">
-        Loading...
-      </div>
-    );
+  const { isAuthenticated } = useAuth();
   if (isAuthenticated) return <Navigate to="/" replace />;
   return <Login />;
 }
