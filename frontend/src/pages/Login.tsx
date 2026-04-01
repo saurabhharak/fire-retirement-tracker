@@ -159,9 +159,19 @@ function PasswordForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+    // Read directly from form elements as fallback for Chrome autofill
+    const form = e.target as HTMLFormElement;
+    const formEmail = (form.elements.namedItem("email") as HTMLInputElement)?.value || email;
+    const formPassword = (form.elements.namedItem("password") as HTMLInputElement)?.value || password;
+
+    if (!formEmail || !formPassword) {
+      setError("Please enter both email and password");
+      return;
+    }
+
     setLoading(true);
     try {
-      await loginWithPassword(email, password);
+      await loginWithPassword(formEmail, formPassword);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -290,12 +300,15 @@ function InputField({
     <div>
       <label className="block text-sm font-medium text-[#E8ECF1]/80 mb-1">{label}</label>
       <input
+        name={type === "email" ? "email" : type === "password" ? "password" : label.toLowerCase()}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onInput={(e) => onChange((e.target as HTMLInputElement).value)}
         placeholder={placeholder}
         required={required}
         maxLength={maxLength}
+        autoComplete={type === "email" ? "email" : type === "password" ? "current-password" : "off"}
         className="w-full px-4 py-2.5 bg-[#0D1B2A] border border-[#1A3A5C] rounded-lg text-[#E8ECF1] placeholder-[#E8ECF1]/30 focus:outline-none focus:border-[#D4A843] focus:ring-1 focus:ring-[#D4A843] transition-colors"
       />
     </div>
