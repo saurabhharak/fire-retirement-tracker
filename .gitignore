@@ -15,3 +15,8 @@ xlsx_extract/
 frontend/node_modules/
 frontend/dist/
 frontend/.env
+stitch-designs/*.html
+frontend/src/App.css
+frontend/src/assets/hero.png
+frontend/src/assets/react.svg
+frontend/src/assets/vite.svg
