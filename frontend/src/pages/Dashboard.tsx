@@ -28,7 +28,7 @@ export default function Dashboard() {
   const growth = useGrowthProjection();
   const retirement = useRetirementAnalysis();
   const income = useIncome(1);
-  const expenses = useExpenses(true);
+  const expenses = useExpenses({ active: true });
 
   // Loading state
   if (fireInputs.isLoading) {

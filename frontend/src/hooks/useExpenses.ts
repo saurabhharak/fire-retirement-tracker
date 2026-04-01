@@ -7,7 +7,10 @@ export interface FixedExpense {
   amount: number;
   frequency: "monthly" | "quarterly" | "yearly" | "one-time";
   is_active?: boolean;
-  owner?: string;
+  owner?: "you" | "wife" | "household";
+  expense_month?: number;
+  expense_year?: number;
+  created_at?: string;
 }
 
 export interface FixedExpenseUpdate {
@@ -15,14 +18,17 @@ export interface FixedExpenseUpdate {
   amount?: number;
   frequency?: "monthly" | "quarterly" | "yearly" | "one-time";
   is_active?: boolean;
-  owner?: string;
+  owner?: "you" | "wife" | "household";
+  expense_month?: number;
+  expense_year?: number;
 }
 
-export function useExpenses(active = true) {
+export function useExpenses(filters: { active?: boolean } = {}) {
   const queryClient = useQueryClient();
+  const active = filters.active ?? true;
 
   const query = useQuery({
-    queryKey: ["expenses", active],
+    queryKey: ["expenses", { active }],
     queryFn: () =>
       api
         .get<{ data: FixedExpense[] }>(`/api/expenses?active=${active}`)
@@ -30,7 +36,7 @@ export function useExpenses(active = true) {
   });
 
   const save = useMutation({
-    mutationFn: (data: Omit<FixedExpense, "id" | "is_active">) =>
+    mutationFn: (data: Omit<FixedExpense, "id" | "is_active" | "created_at">) =>
       api.post("/api/expenses", data),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["expenses"] }),
