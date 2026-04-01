@@ -27,8 +27,15 @@ BEGIN
 END $$;
 
 -- One-time expenses must have month/year
-ALTER TABLE public.fixed_expenses
-  ADD CONSTRAINT IF NOT EXISTS chk_one_time_has_month_year
-  CHECK (frequency != 'one-time' OR (expense_month IS NOT NULL AND expense_year IS NOT NULL));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'chk_one_time_has_month_year'
+  ) THEN
+    ALTER TABLE public.fixed_expenses
+      ADD CONSTRAINT chk_one_time_has_month_year
+      CHECK (frequency != 'one-time' OR (expense_month IS NOT NULL AND expense_year IS NOT NULL));
+  END IF;
+END $$;
 
 COMMIT;
