@@ -6,7 +6,19 @@ from app.services.supabase_client import get_user_client
 
 logger = logging.getLogger(__name__)
 
-def load_fixed_expenses(user_id: str, access_token: str, active_only: bool = True) -> list[dict]:
+def load_fixed_expenses(
+    user_id: str,
+    access_token: str,
+    active_only: bool = True,
+    month: Optional[int] = None,
+    year: Optional[int] = None,
+) -> list[dict]:
+    """Fetch all expenses for the user.
+
+    Owner and frequency filtering is done client-side to keep the query
+    simple and avoid or_() injection risk.  Only month/year are filtered
+    server-side when provided.
+    """
     try:
         client = get_user_client(access_token)
         query = client.table("fixed_expenses").select("*").eq("user_id", user_id)

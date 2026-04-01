@@ -1,4 +1,5 @@
 """Expenses API routes."""
+from typing import Optional
 from fastapi import APIRouter, Depends, Query, Request
 from app.core.models import FixedExpense, FixedExpenseUpdate
 from app.dependencies import CurrentUser, get_current_user
@@ -10,8 +11,16 @@ router = APIRouter(tags=["expenses"])
 
 @router.get("/expenses")
 @limiter.limit("60/minute")
-async def list_expenses(request: Request, active: bool = Query(True), user: CurrentUser = Depends(get_current_user)) -> dict:
-    entries = expenses_svc.load_fixed_expenses(user.id, user.access_token, active_only=active)
+async def list_expenses(
+    request: Request,
+    active: bool = Query(True),
+    month: Optional[int] = Query(None, ge=1, le=12),
+    year: Optional[int] = Query(None, ge=2020, le=2100),
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    entries = expenses_svc.load_fixed_expenses(
+        user.id, user.access_token, active_only=active, month=month, year=year,
+    )
     return {"data": entries}
 
 @router.post("/expenses")
