@@ -185,6 +185,7 @@ export default function IncomeExpenses() {
   }
 
   async function handleIncomeDelete(entry: IncomeEntry) {
+    if (!window.confirm("Delete this income entry?")) return;
     await income.remove({ month: entry.month, year: entry.year });
   }
 
@@ -217,6 +218,7 @@ export default function IncomeExpenses() {
   }
 
   async function handleExpenseDeactivate(id: string) {
+    if (!window.confirm("Deactivate this expense?")) return;
     await expenses.deactivate(id);
   }
 

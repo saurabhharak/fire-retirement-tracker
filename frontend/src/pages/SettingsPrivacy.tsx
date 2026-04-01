@@ -1,8 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
+import { useAuth } from "../contexts/AuthContext";
 import { PageHeader } from "../components/PageHeader";
 
 export default function SettingsPrivacy() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [confirmText, setConfirmText] = useState("");
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -36,8 +40,8 @@ export default function SettingsPrivacy() {
     setMessage("");
     try {
       await api.delete("/api/account", { confirm: "DELETE_ALL_DATA" });
-      setMessage("Account deleted. All data has been removed.");
-      setConfirmText("");
+      await logout();
+      navigate("/login");
     } catch {
       setMessage("Failed to delete account. Please try again.");
     } finally {

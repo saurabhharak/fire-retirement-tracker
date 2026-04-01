@@ -15,6 +15,14 @@ export async function apiFetch<T = unknown>(path: string, options: RequestInit =
     },
   });
 
+  if (res.status === 401) {
+    // Token expired or invalid - sign out
+    const { supabase: sb } = await import("./supabase");
+    await sb.auth.signOut();
+    window.location.href = "/login";
+    throw new Error("Session expired. Please log in again.");
+  }
+
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: "Request failed" }));
     throw new Error(error.detail || `HTTP ${res.status}`);

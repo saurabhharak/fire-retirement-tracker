@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
-import { useAuth } from "./hooks/useAuth";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { AppLayout } from "./layouts/AppLayout";
 import { AuthLayout } from "./layouts/AuthLayout";
 import Login from "./pages/Login";
@@ -32,7 +32,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
         <Suspense
           fallback={
             <div className="min-h-screen bg-[#0D1B2A] flex items-center justify-center text-[#E8ECF1]">
@@ -116,7 +117,8 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
-      </BrowserRouter>
+        </BrowserRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

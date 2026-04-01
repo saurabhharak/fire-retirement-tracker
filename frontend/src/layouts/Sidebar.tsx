@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { NAV_ITEMS } from "../lib/constants";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../contexts/AuthContext";
 
 const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
   LayoutDashboard,
