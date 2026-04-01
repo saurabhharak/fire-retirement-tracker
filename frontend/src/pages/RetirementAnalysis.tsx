@@ -39,7 +39,7 @@ function BucketTooltip({
   return (
     <div className="bg-[#132E3D] border border-[#1A3A5C] rounded-lg p-3 text-sm text-[#E8ECF1]">
       <p className="font-semibold text-[#D4A843] mb-1">{d.name} Bucket</p>
-      <p>Allocation: {d.pct}%</p>
+      <p>Allocation: {(d.pct * 100).toFixed(0)}%</p>
       <p>Amount: {formatRupees(d.amount)}</p>
       <p>Coverage: {d.coverage_years} years</p>
     </div>
@@ -78,7 +78,7 @@ export default function RetirementAnalysis() {
 
   const bucketChartData = data.buckets.map((b) => ({
     name: b.name,
-    pct: b.pct,
+    pct: b.pct * 100,
     amount: b.amount,
     coverage_years: b.coverage_years,
   }));
@@ -129,7 +129,7 @@ export default function RetirementAnalysis() {
                 />
                 <span className="text-sm font-medium text-[#E8ECF1]">{b.name}</span>
               </div>
-              <p className="text-xl font-bold text-[#E8ECF1]">{b.pct}%</p>
+              <p className="text-xl font-bold text-[#E8ECF1]">{(b.pct * 100).toFixed(0)}%</p>
               <p className="text-xs text-[#E8ECF1]/60">
                 {formatRupees(b.amount)} &middot; {b.coverage_years}yr coverage
               </p>
@@ -175,7 +175,7 @@ export default function RetirementAnalysis() {
             </thead>
             <tbody>
               {data.swr_scenarios.map((s) => {
-                const isHighlighted = s.rate === 3;
+                const isHighlighted = s.rate === 0.03;
                 return (
                   <tr
                     key={s.rate}
@@ -184,7 +184,7 @@ export default function RetirementAnalysis() {
                     }`}
                   >
                     <td className={`px-3 py-2 font-medium ${isHighlighted ? "text-[#D4A843]" : ""}`}>
-                      {s.rate}%
+                      {(s.rate * 100).toFixed(1)}%
                     </td>
                     <td className="px-3 py-2">{formatRupees(s.annual)}</td>
                     <td className="px-3 py-2">{formatRupees(s.monthly)}</td>

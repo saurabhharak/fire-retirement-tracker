@@ -40,10 +40,10 @@ export default function FundAllocation() {
     return <EmptyState message="No fund allocation data available." />;
 
   const totalSip = data.reduce((s, f) => s + f.monthly_sip, 0);
-  const equityPct = data.filter((f) => f.category === "Equity").reduce((s, f) => s + f.pct, 0);
-  const debtPct = data.filter((f) => f.category === "Debt").reduce((s, f) => s + f.pct, 0);
+  const equityPct = data.filter((f) => f.category === "equity").reduce((s, f) => s + f.pct, 0);
+  const debtPct = data.filter((f) => f.category === "debt").reduce((s, f) => s + f.pct, 0);
   const cashPct = data
-    .filter((f) => f.category !== "Equity" && f.category !== "Debt")
+    .filter((f) => f.category !== "equity" && f.category !== "debt")
     .reduce((s, f) => s + f.pct, 0);
 
   const grouped = groupByCategory(data);
@@ -58,9 +58,9 @@ export default function FundAllocation() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <MetricCard label="Total SIP" value={totalSip} color="gold" />
-        <MetricCard label="Equity" value={equityPct} prefix="" suffix="%" color="success" />
-        <MetricCard label="Debt" value={debtPct} prefix="" suffix="%" />
-        <MetricCard label="Cash / Gold" value={cashPct} prefix="" suffix="%" />
+        <MetricCard label="Equity" value={+(equityPct * 100).toFixed(1)} prefix="" suffix="%" color="success" />
+        <MetricCard label="Debt" value={+(debtPct * 100).toFixed(1)} prefix="" suffix="%" />
+        <MetricCard label="Cash / Gold" value={+(cashPct * 100).toFixed(1)} prefix="" suffix="%" />
       </div>
 
       {/* Fund Table */}
@@ -87,7 +87,7 @@ export default function FundAllocation() {
                 <td className="px-4 py-3 font-bold text-[#D4A843]">Total</td>
                 <td className="px-4 py-3" />
                 <td className="px-4 py-3 font-bold text-[#D4A843]">
-                  {data.reduce((s, f) => s + f.pct, 0).toFixed(1)}%
+                  {(data.reduce((s, f) => s + f.pct, 0) * 100).toFixed(1)}%
                 </td>
                 <td className="px-4 py-3 font-bold text-[#D4A843]">{formatRupees(totalSip)}</td>
                 <td className="px-4 py-3" />
@@ -117,7 +117,7 @@ function GroupRows({ category, funds }: { category: string; funds: FundAllocatio
           <td className="px-4 py-3">
             <CategoryBadge category={fund.category} />
           </td>
-          <td className="px-4 py-3">{fund.pct.toFixed(1)}%</td>
+          <td className="px-4 py-3">{(fund.pct * 100).toFixed(1)}%</td>
           <td className="px-4 py-3">{formatRupees(fund.monthly_sip)}</td>
           <td className="px-4 py-3 text-[#E8ECF1]/60">{fund.account}</td>
         </tr>

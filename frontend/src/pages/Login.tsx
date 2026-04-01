@@ -341,3 +341,5 @@ function SubmitButton({ loading, children }: { loading: boolean; children: React
     </button>
   );
 }
+
+export default Login;

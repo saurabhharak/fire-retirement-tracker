@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { useGrowthProjection } from "../hooks/useProjections";
 import type { GrowthRow } from "../hooks/useProjections";
+import { useFireInputs } from "../hooks/useFireInputs";
 import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
 import { EmptyState } from "../components/EmptyState";
@@ -55,6 +56,7 @@ function CustomTooltip({
 
 export default function GrowthProjection() {
   const { data, isLoading } = useGrowthProjection();
+  const { data: fireInputs } = useFireInputs();
   const [showTable, setShowTable] = useState(true);
 
   if (isLoading) return <LoadingState message="Calculating projections..." />;
@@ -62,7 +64,7 @@ export default function GrowthProjection() {
     return <EmptyState message="No projection data available. Configure your FIRE settings first." />;
 
   const lastRow = data[data.length - 1];
-  const retirementAge = 50;
+  const retirementAge = fireInputs?.retirement_age ?? 50;
   const retirementRow = data.find((r) => r.age >= retirementAge);
   const corpusAtRetirement = retirementRow?.portfolio ?? lastRow.portfolio;
 
