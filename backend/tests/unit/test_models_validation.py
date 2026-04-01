@@ -53,8 +53,21 @@ def test_fixed_expense_valid_with_owner():
     assert fe.owner == "you"
 
 def test_fixed_expense_one_time_frequency():
-    fe = FixedExpense(name="Vacation", amount=50000, frequency="one-time")
+    fe = FixedExpense(name="Vacation", amount=50000, frequency="one-time", expense_month=4, expense_year=2026)
     assert fe.frequency == "one-time"
+
+def test_fixed_expense_one_time_requires_month_year():
+    with pytest.raises(ValidationError):
+        FixedExpense(name="Vacation", amount=50000, frequency="one-time")
+
+def test_fixed_expense_one_time_requires_both_month_and_year():
+    with pytest.raises(ValidationError):
+        FixedExpense(name="Vacation", amount=50000, frequency="one-time", expense_month=4)
+
+def test_fixed_expense_monthly_no_month_year_ok():
+    fe = FixedExpense(name="Netflix", amount=200, frequency="monthly")
+    assert fe.expense_month is None
+    assert fe.expense_year is None
 
 def test_sip_log_entry_valid():
     sl = SipLogEntry(month=4, year=2026, planned_sip=250000, actual_invested=250000)

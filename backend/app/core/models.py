@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Generic, Literal, Optional, TypeVar
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 T = TypeVar("T")
 
@@ -73,7 +73,16 @@ class FixedExpense(BaseModel):
     name: str = Field(max_length=100)
     amount: float = Field(gt=0)
     frequency: Literal["monthly", "quarterly", "yearly", "one-time"]
-    owner: str = Field(default="household", max_length=50)
+    owner: Literal["you", "wife", "household"] = "household"
+    expense_month: Optional[int] = Field(None, ge=1, le=12)
+    expense_year: Optional[int] = Field(None, ge=2020, le=2100)
+
+    @model_validator(mode="after")
+    def one_time_requires_month_year(self):
+        if self.frequency == "one-time":
+            if self.expense_month is None or self.expense_year is None:
+                raise ValueError("One-time expenses require expense_month and expense_year")
+        return self
 
 
 class FixedExpenseUpdate(BaseModel):
@@ -82,7 +91,9 @@ class FixedExpenseUpdate(BaseModel):
     amount: Optional[float] = Field(None, gt=0)
     frequency: Optional[Literal["monthly", "quarterly", "yearly", "one-time"]] = None
     is_active: Optional[bool] = None
-    owner: Optional[str] = None
+    owner: Optional[Literal["you", "wife", "household"]] = None
+    expense_month: Optional[int] = Field(None, ge=1, le=12)
+    expense_year: Optional[int] = Field(None, ge=2020, le=2100)
 
 
 class SipFund(BaseModel):
