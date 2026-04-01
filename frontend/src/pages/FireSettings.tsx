@@ -85,7 +85,7 @@ export default function FireSettings() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
     "idle"
   );
-  const timeoutRef = useRef<number>();
+  const timeoutRef = useRef<number>(undefined);
 
   useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
 

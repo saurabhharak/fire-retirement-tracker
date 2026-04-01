@@ -15,7 +15,7 @@ import { MetricCard } from "../components/MetricCard";
 import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
 import { EmptyState } from "../components/EmptyState";
-import { formatRupees, formatIndian } from "../lib/formatIndian";
+import { formatRupees } from "../lib/formatIndian";
 import { toMonthlyAmount } from "../lib/expenseUtils";
 
 const MONTH_NAMES = [
@@ -215,9 +215,6 @@ export default function IncomeExpenses() {
     "w-full bg-[#0D1B2A] border border-[#1A3A5C] rounded-lg px-3 py-2 text-[#E8ECF1] text-sm focus:outline-none focus:border-[#00895E] transition-colors";
   const btnPrimary =
     "px-4 py-2 bg-[#00895E] text-white text-sm font-medium rounded-lg hover:bg-[#00895E]/80 transition-colors disabled:opacity-50";
-  const btnSecondary =
-    "px-4 py-2 bg-[#1A3A5C]/40 text-[#E8ECF1]/80 text-sm font-medium rounded-lg hover:bg-[#1A3A5C]/60 transition-colors";
-
   return (
     <div className="space-y-8">
       <PageHeader
@@ -286,7 +283,7 @@ export default function IncomeExpenses() {
                       borderRadius: "8px",
                       color: "#E8ECF1",
                     }}
-                    formatter={(value: number) => [formatRupees(value), ""]}
+                    formatter={(value: any) => [formatRupees(Number(value)), ""]}
                   />
                 </PieChart>
               </ResponsiveContainer>

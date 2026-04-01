@@ -370,11 +370,11 @@ export default function Dashboard() {
                     borderRadius: "8px",
                     color: "#E8ECF1",
                   }}
-                  formatter={(value: number, name: string) => [
-                    formatRupees(value),
-                    name === "equity" ? "Equity" : "Debt+Gold+Cash",
+                  formatter={(value: any, name: any) => [
+                    formatRupees(Number(value)),
+                    String(name) === "equity" ? "Equity" : "Debt+Gold+Cash",
                   ]}
-                  labelFormatter={(label: number) => `Year ${label}`}
+                  labelFormatter={(label: any) => `Year ${label}`}
                 />
                 <ReferenceLine
                   x={retirementChartYear}
