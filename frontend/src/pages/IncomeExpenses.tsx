@@ -39,14 +39,8 @@ export default function IncomeExpenses() {
   const [activeTab, setActiveTab] = useState<ExpenseTab>("all");
   const [ownerFilter, setOwnerFilter] = useState<OwnerOption>("all");
 
-  /* Loading */
-  if (income.isLoading || expenses.isLoading || fireInputs.isLoading) {
-    return <LoadingState message="Loading income & expenses..." />;
-  }
+  /* ---------- Derived Calculations (all hooks must run before any early return) ---------- */
 
-  /* ---------- Derived Calculations ---------- */
-
-  // M7: Filter income to match selected month/year instead of always using latest
   const matchedIncome = income.entries.find(
     (e) => e.month === selectedMonth && e.year === selectedYear,
   );
@@ -58,30 +52,20 @@ export default function IncomeExpenses() {
   const inputs = fireInputs.data;
   const totalSip = (inputs?.your_sip ?? 0) + (inputs?.wife_sip ?? 0);
 
-  /* Client-side filtering */
   const filteredExpenses = useMemo(() => {
     let list = expenses.entries as FixedExpense[];
-
-    // Filter by month (one-time must match, recurring always shown)
     list = list.filter((e) => isExpenseInMonth(e, selectedMonth, selectedYear));
-
-    // Filter by owner
     if (ownerFilter !== "all") {
       list = list.filter((e) => (e.owner ?? "household") === ownerFilter);
     }
-
-    // Filter by tab
     if (activeTab === "fixed") {
       list = list.filter((e) => e.frequency !== "one-time");
     } else if (activeTab === "one-time") {
       list = list.filter((e) => e.frequency === "one-time");
     }
-    // "all" and "income" tabs show all expenses (income tab handled separately)
-
     return list;
   }, [expenses.entries, selectedMonth, selectedYear, ownerFilter, activeTab]);
 
-  // M8: Memoize allMonthExpenses
   const allMonthExpenses = useMemo(
     () =>
       (expenses.entries as FixedExpense[]).filter((e) =>
@@ -90,7 +74,6 @@ export default function IncomeExpenses() {
     [expenses.entries, selectedMonth, selectedYear],
   );
 
-  // M8: Memoize owner totals and fixedExpenseMonthly
   const { fixedExpenseMonthly, yourExpenses, wifeExpenses, householdExpenses } = useMemo(() => {
     const total = allMonthExpenses.reduce(
       (sum: number, e: FixedExpense) => sum + effectiveMonthlyAmount(e.amount, e.frequency),
@@ -113,7 +96,6 @@ export default function IncomeExpenses() {
   const savingsRate =
     totalIncome > 0 ? Math.round((savings / totalIncome) * 1000) / 10 : 0;
 
-  // M8: Memoize pieData
   const pieData = useMemo(
     () =>
       [
@@ -129,6 +111,11 @@ export default function IncomeExpenses() {
       ].filter((d) => d.value > 0),
     [totalSip, yourExpenses, wifeExpenses, householdExpenses, savings],
   );
+
+  /* Loading — after all hooks */
+  if (income.isLoading || expenses.isLoading || fireInputs.isLoading) {
+    return <LoadingState message="Loading income & expenses..." />;
+  }
 
   /* Handlers */
   async function handleExpenseDeactivate(id: string) {
