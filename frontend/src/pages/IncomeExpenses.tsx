@@ -182,7 +182,7 @@ export default function IncomeExpenses() {
           </div>
 
           {/* Owner totals */}
-          <OwnerTotalsBar expenses={tabFilteredExpenses} />
+          <OwnerTotalsBar expenses={tabFilteredExpenses} ownerFilter={ownerFilter} />
 
           {/* Quick Add */}
           <ExpenseQuickAdd
