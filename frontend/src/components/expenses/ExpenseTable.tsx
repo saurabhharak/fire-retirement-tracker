@@ -1,4 +1,4 @@
-import type { FixedExpense } from "../../hooks/useExpenses";
+import type { FixedExpense, PaymentMethod } from "../../hooks/useExpenses";
 import { formatRupees } from "../../lib/formatIndian";
 import { effectiveMonthlyAmount } from "../../lib/expenseUtils";
 import { MONTH_NAMES } from "../../lib/constants";
@@ -8,6 +8,12 @@ interface ExpenseTableProps {
   showOneTime: boolean;
   onDeactivate: (id: string) => void;
 }
+
+const PAYMENT_LABELS: Record<PaymentMethod, string> = {
+  upi: "UPI",
+  credit_card: "Credit Card",
+  cash: "Cash",
+};
 
 function ownerBadge(owner?: string) {
   const cls =
@@ -42,6 +48,7 @@ export function ExpenseTable({ expenses, showOneTime, onDeactivate }: ExpenseTab
             <th className="text-left py-3 px-2">Name</th>
             <th className="text-left py-3 px-2">Owner</th>
             <th className="text-right py-3 px-2">Amount</th>
+            <th className="text-left py-3 px-2">Paid via</th>
             <th className="text-left py-3 px-2">Frequency</th>
             {showOneTime && <th className="text-left py-3 px-2">Month/Year</th>}
             <th className="text-right py-3 px-2">Monthly Equiv.</th>
@@ -58,6 +65,9 @@ export function ExpenseTable({ expenses, showOneTime, onDeactivate }: ExpenseTab
               <td className="py-3 px-2">{ownerBadge(expense.owner)}</td>
               <td className="py-3 px-2 text-right text-[#E8ECF1]">
                 {formatRupees(expense.amount)}
+              </td>
+              <td className="py-3 px-2 text-[#E8ECF1]/60">
+                {PAYMENT_LABELS[expense.payment_method ?? "cash"]}
               </td>
               <td className="py-3 px-2 text-[#E8ECF1]/60 capitalize">
                 {expense.frequency}

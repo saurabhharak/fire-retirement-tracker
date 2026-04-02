@@ -74,6 +74,7 @@ class FixedExpense(BaseModel):
     amount: float = Field(gt=0)
     frequency: Literal["monthly", "quarterly", "yearly", "one-time"]
     owner: Literal["you", "wife", "household"] = "household"
+    payment_method: Literal["upi", "credit_card", "cash"] = "upi"
     expense_month: Optional[int] = Field(None, ge=1, le=12)
     expense_year: Optional[int] = Field(None, ge=2020, le=2100)
 
@@ -96,6 +97,7 @@ class FixedExpenseUpdate(BaseModel):
     frequency: Optional[Literal["monthly", "quarterly", "yearly", "one-time"]] = None
     is_active: Optional[bool] = None
     owner: Optional[Literal["you", "wife", "household"]] = None
+    payment_method: Optional[Literal["upi", "credit_card", "cash"]] = None
     expense_month: Optional[int] = Field(None, ge=1, le=12)
     expense_year: Optional[int] = Field(None, ge=2020, le=2100)
 

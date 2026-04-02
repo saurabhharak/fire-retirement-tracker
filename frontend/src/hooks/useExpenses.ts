@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
+export type PaymentMethod = "upi" | "credit_card" | "cash";
+
 export interface FixedExpense {
   id?: string;
   name: string;
@@ -8,6 +10,7 @@ export interface FixedExpense {
   frequency: "monthly" | "quarterly" | "yearly" | "one-time";
   is_active?: boolean;
   owner?: "you" | "wife" | "household";
+  payment_method?: PaymentMethod;
   expense_month?: number;
   expense_year?: number;
   created_at?: string;
@@ -19,6 +22,7 @@ export interface FixedExpenseUpdate {
   frequency?: "monthly" | "quarterly" | "yearly" | "one-time";
   is_active?: boolean;
   owner?: "you" | "wife" | "household";
+  payment_method?: PaymentMethod;
   expense_month?: number;
   expense_year?: number;
 }

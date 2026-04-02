@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { FixedExpense } from "../../hooks/useExpenses";
+import type { FixedExpense, PaymentMethod } from "../../hooks/useExpenses";
 import { MONTH_NAMES } from "../../lib/constants";
 import { inputCls, btnPrimary } from "../../lib/styles";
 
@@ -8,6 +8,7 @@ interface ExpenseFormState {
   owner: "you" | "wife" | "household";
   amount: number | "";
   frequency: "monthly" | "quarterly" | "yearly" | "one-time";
+  payment_method: PaymentMethod;
   expense_month: number;
   expense_year: number;
 }
@@ -24,6 +25,7 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
     owner: "you",
     amount: "",
     frequency: "monthly",
+    payment_method: "upi",
     expense_month: selectedMonth,
     expense_year: selectedYear,
   });
@@ -59,6 +61,7 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
         owner: form.owner,
         amount: numAmount,
         frequency: form.frequency,
+        payment_method: form.payment_method,
       };
       if (isOneTime) {
         payload.expense_month = form.expense_month;
@@ -70,6 +73,7 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
         owner: "you",
         amount: "",
         frequency: "monthly",
+        payment_method: "upi",
         expense_month: selectedMonth,
         expense_year: selectedYear,
       });
@@ -91,7 +95,7 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
           {error}
         </div>
       )}
-      <div className={`grid grid-cols-1 gap-3 items-end ${isOneTime ? "md:grid-cols-7" : "md:grid-cols-5"}`}>
+      <div className={`grid grid-cols-1 gap-3 items-end ${isOneTime ? "md:grid-cols-8" : "md:grid-cols-6"}`}>
         <div>
           <label className="block text-xs text-[#E8ECF1]/60 mb-1">Name</label>
           <input
@@ -143,6 +147,20 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
             <option value="quarterly">Quarterly</option>
             <option value="yearly">Yearly</option>
             <option value="one-time">One-time</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-[#E8ECF1]/60 mb-1">Paid via</label>
+          <select
+            value={form.payment_method}
+            onChange={(e) =>
+              setForm({ ...form, payment_method: e.target.value as PaymentMethod })
+            }
+            className={inputCls}
+          >
+            <option value="upi">UPI</option>
+            <option value="credit_card">Credit Card</option>
+            <option value="cash">Cash</option>
           </select>
         </div>
         {isOneTime && (
