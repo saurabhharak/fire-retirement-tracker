@@ -52,20 +52,7 @@ export default function IncomeExpenses() {
   const inputs = fireInputs.data;
   const totalSip = (inputs?.your_sip ?? 0) + (inputs?.wife_sip ?? 0);
 
-  const filteredExpenses = useMemo(() => {
-    let list = expenses.entries as FixedExpense[];
-    list = list.filter((e) => isExpenseInMonth(e, selectedMonth, selectedYear));
-    if (ownerFilter !== "all") {
-      list = list.filter((e) => (e.owner ?? "household") === ownerFilter);
-    }
-    if (activeTab === "fixed") {
-      list = list.filter((e) => e.frequency !== "one-time");
-    } else if (activeTab === "one-time") {
-      list = list.filter((e) => e.frequency === "one-time");
-    }
-    return list;
-  }, [expenses.entries, selectedMonth, selectedYear, ownerFilter, activeTab]);
-
+  // All expenses for this month (base for all derived memos)
   const allMonthExpenses = useMemo(
     () =>
       (expenses.entries as FixedExpense[]).filter((e) =>
@@ -73,6 +60,19 @@ export default function IncomeExpenses() {
       ),
     [expenses.entries, selectedMonth, selectedYear],
   );
+
+  // Month + tab filtered (no owner filter) — used for owner totals bar
+  const tabFilteredExpenses = useMemo(() => {
+    if (activeTab === "fixed") return allMonthExpenses.filter((e) => e.frequency !== "one-time");
+    if (activeTab === "one-time") return allMonthExpenses.filter((e) => e.frequency === "one-time");
+    return allMonthExpenses;
+  }, [allMonthExpenses, activeTab]);
+
+  // Full filter (month + tab + owner) — used for expense table
+  const filteredExpenses = useMemo(() => {
+    if (ownerFilter === "all") return tabFilteredExpenses;
+    return tabFilteredExpenses.filter((e) => (e.owner ?? "household") === ownerFilter);
+  }, [tabFilteredExpenses, ownerFilter]);
 
   const { fixedExpenseMonthly, yourExpenses, wifeExpenses, householdExpenses } = useMemo(() => {
     const total = allMonthExpenses.reduce(
@@ -182,11 +182,7 @@ export default function IncomeExpenses() {
           </div>
 
           {/* Owner totals */}
-          <OwnerTotalsBar
-            expenses={expenses.entries as FixedExpense[]}
-            month={selectedMonth}
-            year={selectedYear}
-          />
+          <OwnerTotalsBar expenses={tabFilteredExpenses} />
 
           {/* Quick Add */}
           <ExpenseQuickAdd

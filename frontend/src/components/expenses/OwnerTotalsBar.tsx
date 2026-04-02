@@ -1,24 +1,22 @@
 import type { FixedExpense } from "../../hooks/useExpenses";
 import { formatRupees } from "../../lib/formatIndian";
-import { effectiveMonthlyAmount, isExpenseInMonth } from "../../lib/expenseUtils";
+import { effectiveMonthlyAmount } from "../../lib/expenseUtils";
 
 interface OwnerTotalsBarProps {
+  /** Pre-filtered expenses (already filtered by month + tab) */
   expenses: FixedExpense[];
-  month: number;
-  year: number;
 }
 
-function calcOwnerTotal(expenses: FixedExpense[], owner: string, month: number, year: number): number {
+function calcOwnerTotal(expenses: FixedExpense[], owner: string): number {
   return expenses
     .filter((e) => (e.owner ?? "household") === owner)
-    .filter((e) => isExpenseInMonth(e, month, year))
     .reduce((sum, e) => sum + effectiveMonthlyAmount(e.amount, e.frequency), 0);
 }
 
-export function OwnerTotalsBar({ expenses, month, year }: OwnerTotalsBarProps) {
-  const youTotal = calcOwnerTotal(expenses, "you", month, year);
-  const wifeTotal = calcOwnerTotal(expenses, "wife", month, year);
-  const householdTotal = calcOwnerTotal(expenses, "household", month, year);
+export function OwnerTotalsBar({ expenses }: OwnerTotalsBarProps) {
+  const youTotal = calcOwnerTotal(expenses, "you");
+  const wifeTotal = calcOwnerTotal(expenses, "wife");
+  const householdTotal = calcOwnerTotal(expenses, "household");
   const grandTotal = youTotal + wifeTotal + householdTotal;
 
   const items = [

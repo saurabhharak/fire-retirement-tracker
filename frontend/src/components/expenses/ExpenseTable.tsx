@@ -7,7 +7,6 @@ interface ExpenseTableProps {
   expenses: FixedExpense[];
   showOneTime: boolean;
   onDeactivate: (id: string) => void;
-  onEdit?: (expense: FixedExpense) => void;
 }
 
 function ownerBadge(owner?: string) {
@@ -26,7 +25,7 @@ function ownerBadge(owner?: string) {
   );
 }
 
-export function ExpenseTable({ expenses, showOneTime, onDeactivate, onEdit }: ExpenseTableProps) {
+export function ExpenseTable({ expenses, showOneTime, onDeactivate }: ExpenseTableProps) {
   if (expenses.length === 0) {
     return (
       <div className="text-center py-8 text-[#E8ECF1]/40 text-sm">
@@ -74,14 +73,6 @@ export function ExpenseTable({ expenses, showOneTime, onDeactivate, onEdit }: Ex
                 {formatRupees(Math.round(effectiveMonthlyAmount(expense.amount, expense.frequency)))}
               </td>
               <td className="py-3 px-2 text-right space-x-2">
-                {onEdit && (
-                  <button
-                    onClick={() => onEdit(expense)}
-                    className="text-[#3B82F6] hover:text-[#3B82F6]/80 text-xs font-medium"
-                  >
-                    Edit
-                  </button>
-                )}
                 <button
                   onClick={() => expense.id && onDeactivate(expense.id)}
                   disabled={!expense.id}

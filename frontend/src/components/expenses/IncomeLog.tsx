@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { IncomeEntry } from "../../hooks/useIncome";
 import { formatRupees } from "../../lib/formatIndian";
 import { MONTH_NAMES } from "../../lib/constants";
+import { inputCls, btnPrimary } from "../../lib/styles";
 import { EmptyState } from "../EmptyState";
 
 interface IncomeFormState {
@@ -25,11 +26,6 @@ interface IncomeLogProps {
   onSave: (data: IncomeEntry) => Promise<unknown>;
   onRemove: (params: { month: number; year: number }) => Promise<unknown>;
 }
-
-const inputCls =
-  "w-full bg-[#0D1B2A] border border-[#1A3A5C] rounded-lg px-3 py-2 text-[#E8ECF1] text-sm focus:outline-none focus:border-[#00895E] transition-colors";
-const btnPrimary =
-  "px-4 py-2 bg-[#00895E] text-white text-sm font-medium rounded-lg hover:bg-[#00895E]/80 transition-colors disabled:opacity-50";
 
 export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
   const [showForm, setShowForm] = useState(false);
@@ -162,6 +158,7 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
               placeholder="Optional"
               value={incomeForm.notes}
               onChange={(e) => setIncomeForm({ ...incomeForm, notes: e.target.value })}
+              maxLength={500}
               className={inputCls}
             />
           </div>
@@ -233,6 +230,7 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
                           type="text"
                           value={editForm.notes}
                           onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                          maxLength={500}
                           className={`${inputCls} w-32`}
                         />
                       </td>

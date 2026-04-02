@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { FixedExpense } from "../../hooks/useExpenses";
 import { MONTH_NAMES } from "../../lib/constants";
+import { inputCls, btnPrimary } from "../../lib/styles";
 
 interface ExpenseFormState {
   name: string;
@@ -16,11 +17,6 @@ interface ExpenseQuickAddProps {
   selectedYear: number;
   onSave: (data: Omit<FixedExpense, "id" | "is_active" | "created_at">) => Promise<unknown>;
 }
-
-const inputCls =
-  "w-full bg-[#0D1B2A] border border-[#1A3A5C] rounded-lg px-3 py-2 text-[#E8ECF1] text-sm focus:outline-none focus:border-[#00895E] transition-colors";
-const btnPrimary =
-  "px-4 py-2 bg-[#00895E] text-white text-sm font-medium rounded-lg hover:bg-[#00895E]/80 transition-colors disabled:opacity-50";
 
 export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: ExpenseQuickAddProps) {
   const [form, setForm] = useState<ExpenseFormState>({
@@ -104,6 +100,7 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             required
+            maxLength={100}
             className={inputCls}
           />
         </div>
