@@ -29,15 +29,17 @@ export function OwnerTotalsBar({ expenses, ownerFilter }: OwnerTotalsBarProps) {
   };
   const grandTotal = totals.you + totals.wife + totals.household;
 
-  // When a specific owner is selected, show only that owner + total
-  const visibleCards = ownerFilter === "all"
-    ? ownerCards
-    : ownerCards.filter((c) => c.key === ownerFilter);
+  const isActive = (key: string) => ownerFilter === "all" || ownerFilter === key;
 
   return (
-    <div className={`grid gap-3 mb-4 ${visibleCards.length === 1 ? "grid-cols-2" : "grid-cols-2 md:grid-cols-4"}`}>
-      {visibleCards.map((card) => (
-        <div key={card.key} className={`${card.bg} rounded-lg px-3 py-2 border border-[#1A3A5C]/20`}>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      {ownerCards.map((card) => (
+        <div
+          key={card.key}
+          className={`${card.bg} rounded-lg px-3 py-2 border border-[#1A3A5C]/20 transition-opacity ${
+            isActive(card.key) ? "opacity-100" : "opacity-30"
+          }`}
+        >
           <p className="text-xs text-[#E8ECF1]/50">{card.label}</p>
           <p className={`text-sm font-semibold ${card.color}`} style={{ fontVariantNumeric: "tabular-nums" }}>
             {formatRupees(Math.round(totals[card.key]))}
