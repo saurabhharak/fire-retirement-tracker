@@ -33,7 +33,6 @@ export default function GoldPortfolio() {
   const totalCost = summary?.total_cost ?? 0;
   const currentValue = summary?.current_value ?? 0;
   const totalPnlPct = summary?.total_pnl_pct ?? 0;
-  const pnlColor = totalPnlPct >= 0 ? ("success" as const) : ("warning" as const);
 
   return (
     <div>
