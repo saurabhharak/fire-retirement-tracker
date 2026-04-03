@@ -180,7 +180,8 @@ def _fetch_from_metals_dev() -> Optional[dict]:
             logger.error("Metals.dev unexpected response: %s", body)
             return None
 
-        price_per_toz = float(body["price"])
+        rate_data = body.get("rate", body)
+        price_per_toz = float(rate_data["price"])
         rate_24k = _toz_to_gram(price_per_toz)
 
         # S7: Sanity check
