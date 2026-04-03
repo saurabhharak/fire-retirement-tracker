@@ -27,7 +27,7 @@ RATE_MAX_INR_PER_GRAM = 500000.0
 # ---------------------------------------------------------------------------
 _rate_cache: dict = {}       # keys: rate_24k, rate_22k, rate_18k, source, fetched_at
 _rate_cache_ts: float = 0.0  # epoch timestamp of last cache fill
-CACHE_TTL_SECONDS = 15 * 60  # 15 minutes
+CACHE_TTL_SECONDS = 6 * 60 * 60  # 6 hours (free tier: 100 req/month)
 
 
 # ===================================================================
@@ -336,8 +336,8 @@ def fetch_gold_rate() -> Optional[dict]:
     # --- Tier 2: DB cache ---
     db_rate = _get_db_cached_rate()
     if db_rate:
-        # Check if DB cache is fresh enough (< 1 hour) to skip API call
-        if not _is_rate_stale(db_rate["fetched_at"], threshold_hours=1):
+        # Check if DB cache is fresh enough (< 12 hours) to skip API call
+        if not _is_rate_stale(db_rate["fetched_at"], threshold_hours=12):
             # Refresh in-memory cache from DB
             _rate_cache = db_rate
             _rate_cache_ts = time.time()

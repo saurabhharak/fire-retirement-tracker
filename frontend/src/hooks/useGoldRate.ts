@@ -18,8 +18,8 @@ export function useGoldRate() {
       api
         .get<{ data: GoldRate | null }>("/api/gold-rate")
         .then((r) => r.data),
-    staleTime: 15 * 60 * 1000,
-    refetchInterval: 15 * 60 * 1000,
+    staleTime: 6 * 60 * 60 * 1000,      // 6 hours (free tier: 100 req/month)
+    refetchInterval: 6 * 60 * 60 * 1000, // 6 hours
   });
 
   return {
