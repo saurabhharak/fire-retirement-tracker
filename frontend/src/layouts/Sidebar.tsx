@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Coins,
+  Gem,
   Settings,
   Briefcase,
   TrendingUp,
@@ -17,6 +18,7 @@ import { useAuth } from "../contexts/AuthContext";
 const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
   LayoutDashboard,
   Coins,
+  Gem,
   Settings,
   Briefcase,
   TrendingUp,

@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
+    # Gold rate API keys (optional -- graceful degradation if missing)
+    gold_api_key: str = ""           # Metals.dev API key  (env: GOLD_API_KEY)
+    gold_api_key_fallback: str = ""  # GoldAPI.io fallback (env: GOLD_API_KEY_FALLBACK)
+
     @field_validator("cors_origins")
     @classmethod
     def no_wildcard_with_credentials(cls, v):

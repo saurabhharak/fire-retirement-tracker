@@ -2,7 +2,8 @@
 
 import pytest
 from pydantic import ValidationError
-from app.core.models import FireInputs, IncomeEntry, FixedExpense, SipLogEntry
+from datetime import date, timedelta
+from app.core.models import FireInputs, IncomeEntry, FixedExpense, SipLogEntry, GoldPurchase, GoldPurchaseUpdate
 
 def test_fire_inputs_valid():
     fi = FireInputs(dob="1997-07-11", retirement_age=40, life_expectancy=90,
@@ -76,3 +77,61 @@ def test_sip_log_entry_valid():
 def test_sip_log_entry_negative_amount_rejects():
     with pytest.raises(ValidationError):
         SipLogEntry(month=4, year=2026, planned_sip=250000, actual_invested=-100)
+
+
+# ---------------------------------------------------------------------------
+# GoldPurchase model tests
+# ---------------------------------------------------------------------------
+
+def test_gold_purchase_valid():
+    gp = GoldPurchase(purchase_date="2026-03-15", weight_grams=10.0,
+                      price_per_gram=13500.0, purity="24K", owner="you")
+    assert gp.purity == "24K"
+    assert gp.owner == "you"
+
+def test_gold_purchase_defaults():
+    gp = GoldPurchase(purchase_date="2026-03-15", weight_grams=5.0,
+                      price_per_gram=12000.0, purity="22K")
+    assert gp.owner == "household"
+    assert gp.notes == ""
+
+def test_gold_purchase_date_before_2000_rejects():
+    with pytest.raises(ValidationError):
+        GoldPurchase(purchase_date="1999-12-31", weight_grams=10.0,
+                     price_per_gram=5000.0, purity="24K")
+
+def test_gold_purchase_future_date_rejects():
+    future = date.today() + timedelta(days=30)
+    with pytest.raises(ValidationError):
+        GoldPurchase(purchase_date=future.isoformat(), weight_grams=10.0,
+                     price_per_gram=13500.0, purity="24K")
+
+def test_gold_purchase_weight_exceeds_upper_bound_rejects():
+    with pytest.raises(ValidationError):
+        GoldPurchase(purchase_date="2026-03-15", weight_grams=100001,
+                     price_per_gram=13500.0, purity="24K")
+
+def test_gold_purchase_price_exceeds_upper_bound_rejects():
+    with pytest.raises(ValidationError):
+        GoldPurchase(purchase_date="2026-03-15", weight_grams=10.0,
+                     price_per_gram=1000001, purity="24K")
+
+def test_gold_purchase_zero_weight_rejects():
+    with pytest.raises(ValidationError):
+        GoldPurchase(purchase_date="2026-03-15", weight_grams=0,
+                     price_per_gram=13500.0, purity="24K")
+
+def test_gold_purchase_invalid_purity_rejects():
+    with pytest.raises(ValidationError):
+        GoldPurchase(purchase_date="2026-03-15", weight_grams=10.0,
+                     price_per_gram=13500.0, purity="14K")
+
+def test_gold_purchase_update_partial_fields():
+    gpu = GoldPurchaseUpdate(weight_grams=15.0)
+    assert gpu.weight_grams == 15.0
+    assert gpu.purity is None
+    assert gpu.owner is None
+
+def test_gold_purchase_update_date_validator():
+    with pytest.raises(ValidationError):
+        GoldPurchaseUpdate(purchase_date="1999-01-01")

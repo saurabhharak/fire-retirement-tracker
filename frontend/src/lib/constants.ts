@@ -18,6 +18,7 @@ export const COLORS = {
 export const NAV_ITEMS = [
   { path: "/", label: "Dashboard", icon: "LayoutDashboard" },
   { path: "/income-expenses", label: "Income & Expenses", icon: "Coins" },
+  { path: "/gold-portfolio", label: "Gold Portfolio", icon: "Gem" },
   { path: "/fire-settings", label: "FIRE Settings", icon: "Settings" },
   { path: "/fund-allocation", label: "Fund Allocation", icon: "Briefcase" },
   { path: "/growth-projection", label: "Growth Projection", icon: "TrendingUp" },

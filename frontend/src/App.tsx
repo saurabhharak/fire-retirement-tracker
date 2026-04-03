@@ -14,6 +14,7 @@ const FundAllocation = lazy(() => import("./pages/FundAllocation"));
 const GrowthProjection = lazy(() => import("./pages/GrowthProjection"));
 const RetirementAnalysis = lazy(() => import("./pages/RetirementAnalysis"));
 const SipTracker = lazy(() => import("./pages/SipTracker"));
+const GoldPortfolio = lazy(() => import("./pages/GoldPortfolio"));
 const SettingsPrivacy = lazy(() => import("./pages/SettingsPrivacy"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -98,6 +99,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <SipTracker />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/gold-portfolio"
+              element={
+                <ProtectedRoute>
+                  <GoldPortfolio />
                 </ProtectedRoute>
               }
             />
