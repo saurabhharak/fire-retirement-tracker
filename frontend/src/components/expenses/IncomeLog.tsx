@@ -35,6 +35,7 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
   const [savingAdd, setSavingAdd] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [addMode, setAddMode] = useState<{ your: boolean; wife: boolean }>({ your: false, wife: false });
 
   // Auto-populate add form when month/year matches an existing entry
   function syncFormWithExisting(month: number, year: number, base: Partial<IncomeFormState> = {}) {
@@ -54,14 +55,21 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
     setError(null);
     setSavingAdd(true);
     try {
+      const existing = entries.find(
+        (en) => en.month === incomeForm.month && en.year === incomeForm.year,
+      );
+      const yourVal = Number(incomeForm.your_income) || 0;
+      const wifeVal = Number(incomeForm.wife_income) || 0;
+
       await onSave({
         month: incomeForm.month,
         year: incomeForm.year,
-        your_income: Number(incomeForm.your_income) || 0,
-        wife_income: Number(incomeForm.wife_income) || 0,
+        your_income: addMode.your && existing ? existing.your_income + yourVal : yourVal,
+        wife_income: addMode.wife && existing ? existing.wife_income + wifeVal : wifeVal,
         notes: incomeForm.notes,
       });
       setIncomeForm(emptyIncomeForm());
+      setAddMode({ your: false, wife: false });
       setShowForm(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save income entry");
@@ -152,28 +160,68 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
             />
           </div>
           <div>
-            <label className="block text-xs text-[#E8ECF1]/60 mb-1">Your Income</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-[#E8ECF1]/60">Your Income</label>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !addMode.your;
+                  setAddMode({ ...addMode, your: next });
+                  if (next) setIncomeForm({ ...incomeForm, your_income: "" });
+                  else syncFormWithExisting(incomeForm.month, incomeForm.year);
+                }}
+                className={`text-xs px-1.5 py-0.5 rounded ${addMode.your ? "bg-[#00895E]/30 text-[#00895E]" : "bg-[#1A3A5C]/30 text-[#E8ECF1]/40"}`}
+                title={addMode.your ? "Adding to existing" : "Click to add to existing"}
+              >
+                {addMode.your ? "+ Add" : "Set"}
+              </button>
+            </div>
             <input
               type="number"
-              placeholder="0"
+              placeholder={addMode.your ? "Amount to add" : "0"}
               value={incomeForm.your_income}
               onChange={(e) =>
                 setIncomeForm({ ...incomeForm, your_income: e.target.value === "" ? "" : Number(e.target.value) })
               }
               className={inputCls}
             />
+            {addMode.your && entries.find((en) => en.month === incomeForm.month && en.year === incomeForm.year) && (
+              <p className="text-xs text-[#00895E]/70 mt-1">
+                Current: {formatRupees(entries.find((en) => en.month === incomeForm.month && en.year === incomeForm.year)!.your_income)}
+              </p>
+            )}
           </div>
           <div>
-            <label className="block text-xs text-[#E8ECF1]/60 mb-1">Wife's Income</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-[#E8ECF1]/60">Wife's Income</label>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !addMode.wife;
+                  setAddMode({ ...addMode, wife: next });
+                  if (next) setIncomeForm({ ...incomeForm, wife_income: "" });
+                  else syncFormWithExisting(incomeForm.month, incomeForm.year);
+                }}
+                className={`text-xs px-1.5 py-0.5 rounded ${addMode.wife ? "bg-[#00895E]/30 text-[#00895E]" : "bg-[#1A3A5C]/30 text-[#E8ECF1]/40"}`}
+                title={addMode.wife ? "Adding to existing" : "Click to add to existing"}
+              >
+                {addMode.wife ? "+ Add" : "Set"}
+              </button>
+            </div>
             <input
               type="number"
-              placeholder="0"
+              placeholder={addMode.wife ? "Amount to add" : "0"}
               value={incomeForm.wife_income}
               onChange={(e) =>
                 setIncomeForm({ ...incomeForm, wife_income: e.target.value === "" ? "" : Number(e.target.value) })
               }
               className={inputCls}
             />
+            {addMode.wife && entries.find((en) => en.month === incomeForm.month && en.year === incomeForm.year) && (
+              <p className="text-xs text-[#00895E]/70 mt-1">
+                Current: {formatRupees(entries.find((en) => en.month === incomeForm.month && en.year === incomeForm.year)!.wife_income)}
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-xs text-[#E8ECF1]/60 mb-1">Notes</label>
