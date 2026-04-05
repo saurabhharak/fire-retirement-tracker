@@ -73,7 +73,7 @@ export default function SettingsPrivacy() {
       </div>
 
       {/* Delete Account Section */}
-      <div className="bg-[#132E3D] rounded-xl p-5 border border-[#C45B5B]/30">
+      <div className="bg-[#132E3D] rounded-xl p-5 border border-[#E5A100]/30">
         <h2 className="text-lg font-semibold text-[#E8ECF1] mb-2">Delete Account</h2>
         <p className="text-sm text-[#E5A100] mb-4">
           This action is irreversible. All your data, including income, expenses, fund
@@ -90,13 +90,13 @@ export default function SettingsPrivacy() {
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder="DELETE_ALL_DATA"
-              className="w-full px-3 py-2 bg-[#0D1B2A] border border-[#1A3A5C] rounded-lg text-[#E8ECF1] text-sm focus:outline-none focus:border-[#C45B5B] font-mono"
+              className="w-full px-3 py-2 bg-[#0D1B2A] border border-[#1A3A5C] rounded-lg text-[#E8ECF1] text-sm focus:outline-none focus:border-[#E5A100] font-mono"
             />
           </div>
           <button
             onClick={handleDelete}
             disabled={confirmText !== "DELETE_ALL_DATA" || deleting}
-            className="px-6 py-2 bg-[#C45B5B] text-white rounded-lg hover:bg-[#C45B5B]/80 transition-colors disabled:opacity-30 text-sm font-medium whitespace-nowrap"
+            className="px-6 py-2 bg-[#E5A100] text-white rounded-lg hover:bg-[#E5A100]/80 transition-colors disabled:opacity-30 text-sm font-medium whitespace-nowrap"
           >
             {deleting ? "Deleting..." : "Delete All Data"}
           </button>

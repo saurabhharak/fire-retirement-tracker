@@ -6,7 +6,7 @@ describe("COLORS", () => {
     expect(COLORS.primary).toBe("#00895E");
     expect(COLORS.secondary).toBe("#D4A843");
     expect(COLORS.background).toBe("#0D1B2A");
-    expect(COLORS.error).toBe("#C45B5B");
+    expect(COLORS.error).toBe("#E5A100");
   });
 
   it("does not contain red (#FF0000)", () => {

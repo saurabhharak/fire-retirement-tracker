@@ -12,7 +12,7 @@ export const COLORS = {
   text: "#E8ECF1",
   success: "#2E8B57",
   warning: "#E5A100",
-  error: "#C45B5B",
+  error: "#E5A100",
 } as const;
 
 export const NAV_ITEMS = [

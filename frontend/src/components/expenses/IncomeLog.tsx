@@ -241,7 +241,7 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
       )}
 
       {error && (
-        <div className="mb-4 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+        <div className="mb-4 px-4 py-2 bg-[#E5A100]/10 border border-[#E5A100]/30 rounded-lg text-[#E5A100] text-sm">
           {error}
         </div>
       )}

@@ -397,7 +397,7 @@ export default function FireSettings() {
               <div
                 className={`w-full border rounded-lg py-2.5 px-3 text-sm font-bold ${
                   allocationWarning
-                    ? "bg-[#C45B5B]/10 border-[#C45B5B]/50 text-[#C45B5B]"
+                    ? "bg-[#E5A100]/10 border-[#E5A100]/50 text-[#E5A100]"
                     : "bg-[#00895E]/10 border-[#00895E]/50 text-[#00895E]"
                 }`}
               >
@@ -406,7 +406,7 @@ export default function FireSettings() {
             </div>
           </div>
           {allocationWarning && (
-            <p className="mt-3 text-sm text-[#C45B5B] font-medium">
+            <p className="mt-3 text-sm text-[#E5A100] font-medium">
               Equity + Gold + Cash exceeds 100%. Please adjust allocations.
             </p>
           )}
@@ -427,7 +427,7 @@ export default function FireSettings() {
             </span>
           )}
           {saveStatus === "error" && (
-            <span className="text-[#C45B5B] text-sm font-medium">
+            <span className="text-[#E5A100] text-sm font-medium">
               Failed to save. Please try again.
             </span>
           )}

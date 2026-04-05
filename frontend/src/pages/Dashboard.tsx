@@ -15,12 +15,14 @@ import {
 } from "../hooks/useProjections";
 import { useIncome } from "../hooks/useIncome";
 import { useExpenses } from "../hooks/useExpenses";
+import { useGoldSummary } from "../hooks/useGoldSummary";
 import { MetricCard } from "../components/MetricCard";
 import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
 import { EmptyState } from "../components/EmptyState";
 import { formatRupees, formatIndian } from "../lib/formatIndian";
 import { toMonthlyAmount } from "../lib/expenseUtils";
+import { MONTH_NAMES } from "../lib/constants";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -29,6 +31,7 @@ export default function Dashboard() {
   const retirement = useRetirementAnalysis();
   const income = useIncome(1);
   const expenses = useExpenses({ active: true });
+  const goldSummary = useGoldSummary();
 
   // Loading state
   if (fireInputs.isLoading) {
@@ -82,6 +85,14 @@ export default function Dashboard() {
   const totalIncome = latestIncome
     ? latestIncome.your_income + latestIncome.wife_income
     : 0;
+  const incomeLabel = latestIncome
+    ? `Income (${MONTH_NAMES[latestIncome.month - 1]} ${latestIncome.year})`
+    : "Latest Income";
+
+  // Gold portfolio
+  const goldValue = goldSummary.summary?.current_value ?? 0;
+  const existingCorpus = inputs.existing_corpus ?? 0;
+  const totalNetWorth = existingCorpus + goldValue;
 
   // Expenses: sum all active monthly-equivalent expenses
   const fixedExpenseTotal = expenses.entries.reduce(
@@ -107,8 +118,8 @@ export default function Dashboard() {
   const surplus = retData?.surplus ?? 0;
 
   // Funded ratio color coding
-  const fundedColor: "success" | "warning" | "gold" | "default" =
-    fundedPct >= 100 ? "success" : fundedPct >= 80 ? "warning" : "default";
+  const fundedColor: "success" | "warning" | "alert" =
+    fundedPct >= 100 ? "success" : fundedPct >= 80 ? "warning" : "alert";
   const fundedLabel =
     fundedPct >= 100 ? "On Track" : fundedPct >= 80 ? "Close" : "Needs Work";
 
@@ -174,7 +185,7 @@ export default function Dashboard() {
 
       {/* Income Overview */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard label="Latest Income" value={totalIncome} />
+        <MetricCard label={incomeLabel} value={totalIncome} />
         <MetricCard label="Fixed Expenses" value={Math.round(fixedExpenseTotal)} />
         <MetricCard
           label="Monthly Savings"
@@ -193,6 +204,36 @@ export default function Dashboard() {
               className="h-full bg-[#00895E] transition-all duration-500"
               style={{ width: `${Math.min(100, Math.max(0, savingsRate))}%` }}
             />
+          </div>
+        </div>
+      </section>
+
+      {/* Net Worth */}
+      <section className="bg-[#D4A843]/5 border border-[#D4A843]/20 rounded-2xl p-6">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#D4A843] mb-4">Net Worth</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs text-[#E8ECF1]/50 mb-1">Existing Corpus</p>
+            <p className="text-lg font-bold text-[#E8ECF1]" style={{ fontVariantNumeric: "tabular-nums" }}>
+              {formatRupees(Math.round(existingCorpus))}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-[#E8ECF1]/50 mb-1">Gold Holdings</p>
+            <p className="text-lg font-bold text-[#D4A843]" style={{ fontVariantNumeric: "tabular-nums" }}>
+              {goldValue > 0 ? formatRupees(Math.round(goldValue)) : "--"}
+            </p>
+            {goldValue > 0 && goldSummary.summary && (
+              <p className="text-[10px] text-[#E8ECF1]/40 mt-0.5">
+                {goldSummary.summary.total_weight_grams}g physical gold
+              </p>
+            )}
+          </div>
+          <div>
+            <p className="text-xs text-[#E8ECF1]/50 mb-1">Total Net Worth</p>
+            <p className="text-lg font-bold text-[#00895E]" style={{ fontVariantNumeric: "tabular-nums" }}>
+              {formatRupees(Math.round(totalNetWorth))}
+            </p>
           </div>
         </div>
       </section>
@@ -231,7 +272,7 @@ export default function Dashboard() {
                     ? "text-[#00895E]"
                     : fundedColor === "warning"
                     ? "text-[#E5A100]"
-                    : "text-[#E8ECF1]"
+                    : "text-[#E07A5F]"
                 }`}
                 style={{ fontVariantNumeric: "tabular-nums" }}
               >
@@ -243,7 +284,7 @@ export default function Dashboard() {
                     ? "bg-[#2E8B57]/20 text-[#2E8B57]"
                     : fundedColor === "warning"
                     ? "bg-[#E5A100]/20 text-[#E5A100]"
-                    : "bg-[#C45B5B]/20 text-[#C45B5B]"
+                    : "bg-[#E07A5F]/20 text-[#E07A5F]"
                 }`}
               >
                 {fundedLabel}
@@ -261,7 +302,7 @@ export default function Dashboard() {
             </p>
             <div
               className={`mt-1 flex items-center text-xs font-bold ${
-                surplus >= 0 ? "text-[#2E8B57]" : "text-[#C45B5B]"
+                surplus >= 0 ? "text-[#2E8B57]" : "text-[#E5A100]"
               }`}
             >
               {surplus >= 0 ? "+" : "-"} {formatRupees(Math.round(Math.abs(surplus)))}{" "}

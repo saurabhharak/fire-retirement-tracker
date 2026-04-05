@@ -91,7 +91,7 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
     >
       <h3 className="text-sm font-medium text-[#E8ECF1]/80 mb-3">Quick Add Expense</h3>
       {error && (
-        <div className="mb-3 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+        <div className="mb-3 px-4 py-2 bg-[#E5A100]/10 border border-[#E5A100]/30 rounded-lg text-[#E5A100] text-sm">
           {error}
         </div>
       )}

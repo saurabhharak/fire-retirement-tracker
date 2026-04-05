@@ -59,8 +59,8 @@ function VerdictBadge({ verdict }: { verdict: string }) {
     bgColor = "bg-[#E5A100]/20";
     textColor = "text-[#E5A100]";
   } else if (lower.includes("danger") || lower.includes("fail") || lower.includes("short")) {
-    bgColor = "bg-[#C45B5B]/20";
-    textColor = "text-[#C45B5B]";
+    bgColor = "bg-[#E5A100]/20";
+    textColor = "text-[#E5A100]";
   }
 
   return (
