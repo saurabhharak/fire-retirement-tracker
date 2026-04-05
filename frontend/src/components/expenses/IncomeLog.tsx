@@ -36,6 +36,19 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
   const [savingEdit, setSavingEdit] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Auto-populate add form when month/year matches an existing entry
+  function syncFormWithExisting(month: number, year: number, base: Partial<IncomeFormState> = {}) {
+    const existing = entries.find((e) => e.month === month && e.year === year);
+    setIncomeForm({
+      month,
+      year,
+      your_income: existing?.your_income ?? "",
+      wife_income: existing?.wife_income ?? "",
+      notes: existing?.notes ?? "",
+      ...base,
+    });
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -96,7 +109,18 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
     <section className="bg-[#1A3A5C]/20 backdrop-blur-sm rounded-2xl p-6 border border-white/5">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-[#E8ECF1]">Income Log</h2>
-        <button onClick={() => setShowForm(!showForm)} className={btnPrimary}>
+        <button onClick={() => {
+          if (!showForm) {
+            const f = emptyIncomeForm();
+            const existing = entries.find((e) => e.month === f.month && e.year === f.year);
+            if (existing) {
+              setIncomeForm({ month: f.month, year: f.year, your_income: existing.your_income, wife_income: existing.wife_income, notes: existing.notes });
+            } else {
+              setIncomeForm(f);
+            }
+          }
+          setShowForm(!showForm);
+        }} className={btnPrimary}>
           {showForm ? "Cancel" : "+ Add Income"}
         </button>
       </div>
@@ -110,7 +134,7 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
             <label className="block text-xs text-[#E8ECF1]/60 mb-1">Month</label>
             <select
               value={incomeForm.month}
-              onChange={(e) => setIncomeForm({ ...incomeForm, month: Number(e.target.value) })}
+              onChange={(e) => syncFormWithExisting(Number(e.target.value), incomeForm.year)}
               className={inputCls}
             >
               {MONTH_NAMES.map((m, i) => (
@@ -123,7 +147,7 @@ export function IncomeLog({ entries, onSave, onRemove }: IncomeLogProps) {
             <input
               type="number"
               value={incomeForm.year}
-              onChange={(e) => setIncomeForm({ ...incomeForm, year: Number(e.target.value) })}
+              onChange={(e) => syncFormWithExisting(incomeForm.month, Number(e.target.value))}
               className={inputCls}
             />
           </div>
