@@ -144,6 +144,15 @@ with col4:
 
 st.markdown("### FIRE Metrics")
 
+if metrics["required_corpus"] == 0:
+    st.warning(
+        "**Monthly expense not configured.** Required Corpus, Funded Ratio, and SWP "
+        "calculations need your monthly expense. "
+        + (f"Your tracked expenses total Rs {format_indian(fixed_expense_total)}/mo — "
+           "consider using this value. " if fixed_expense_total > 0 else "")
+        + "Update in **FIRE Settings**."
+    )
+
 funded_ratio = metrics["funded_ratio"]
 # Color-code funded ratio
 if funded_ratio >= 1.0:
@@ -179,13 +188,21 @@ with col3:
 with col4:
     monthly_swp = metrics["monthly_swp"]
     monthly_expense_ret = metrics["monthly_expense"]
-    delta = monthly_swp - monthly_expense_ret
-    st.metric(
-        "Monthly SWP vs Expense",
-        f"Rs {format_indian(monthly_swp)}",
-        delta=f"Rs {format_indian(delta)} {'surplus' if delta >= 0 else 'deficit'}",
-        delta_color="normal" if delta >= 0 else "inverse",
-    )
+    if monthly_expense_ret > 0:
+        delta = monthly_swp - monthly_expense_ret
+        st.metric(
+            "Monthly SWP vs Expense",
+            f"Rs {format_indian(monthly_swp)}",
+            delta=f"Rs {format_indian(delta)} {'surplus' if delta >= 0 else 'deficit'}",
+            delta_color="normal" if delta >= 0 else "inverse",
+        )
+    else:
+        st.metric(
+            "Monthly SWP",
+            f"Rs {format_indian(monthly_swp)}",
+            delta="Set expense in FIRE Settings",
+            delta_color="off",
+        )
 
 # ---------------------------------------------------------------------------
 # Growth Chart -- Plotly stacked area

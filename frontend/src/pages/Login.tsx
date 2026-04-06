@@ -150,15 +150,17 @@ function OtpForm() {
 /* ------------------------------------------------------------------ */
 
 function PasswordForm() {
-  const { loginWithPassword } = useAuth();
+  const { loginWithPassword, resetPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resetSent, setResetSent] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+    setResetSent(false);
     // Read directly from form elements as fallback for Chrome autofill
     const form = e.target as HTMLFormElement;
     const formEmail = (form.elements.namedItem("email") as HTMLInputElement)?.value || email;
@@ -174,6 +176,27 @@ function PasswordForm() {
       await loginWithPassword(formEmail, formPassword);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setError("");
+    setResetSent(false);
+    if (!email) {
+      setError("Enter your email address first, then click Forgot Password");
+      return;
+    }
+    if (resetSent) return; // Prevent spamming while cooldown is active
+    setLoading(true);
+    try {
+      await resetPassword(email);
+      setResetSent(true);
+      // Auto-clear the success message after 60s cooldown
+      setTimeout(() => setResetSent(false), 60000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send reset email");
     } finally {
       setLoading(false);
     }
@@ -198,7 +221,20 @@ function PasswordForm() {
         required
       />
       <ErrorMessage message={error} />
+      {resetSent && (
+        <p className="text-sm text-[#2E8B57] bg-[#2E8B57]/10 border border-[#2E8B57]/20 rounded-lg px-3 py-2">
+          Password reset link sent! Check your email.
+        </p>
+      )}
       <SubmitButton loading={loading}>Log In</SubmitButton>
+      <button
+        type="button"
+        onClick={handleForgotPassword}
+        disabled={loading || resetSent}
+        className="w-full text-sm text-[#D4A843] hover:text-[#D4A843]/80 transition-colors cursor-pointer disabled:opacity-50"
+      >
+        {resetSent ? "Reset link sent (wait 60s)" : "Forgot Password?"}
+      </button>
     </form>
   );
 }

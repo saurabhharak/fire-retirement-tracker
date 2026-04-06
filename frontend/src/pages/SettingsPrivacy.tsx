@@ -89,7 +89,8 @@ export default function SettingsPrivacy() {
               type="text"
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="DELETE_ALL_DATA"
+              placeholder="Type here to confirm"
+              autoComplete="off"
               className="w-full px-3 py-2 bg-[#0D1B2A] border border-[#1A3A5C] rounded-lg text-[#E8ECF1] text-sm focus:outline-none focus:border-[#E5A100] font-mono"
             />
           </div>

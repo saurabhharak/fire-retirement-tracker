@@ -179,6 +179,33 @@ def login_page():
                         logging.error(f"Login failed: {exc}")
                         st.error("Login failed. Please check your credentials and try again.")
 
+        # Forgot Password
+        with st.expander("Forgot Password?"):
+            # Pre-fill with login email if reset_email not yet touched
+            if "reset_email" not in st.session_state and st.session_state.get("login_email"):
+                st.session_state["reset_email"] = st.session_state["login_email"]
+            reset_email = st.text_input(
+                "Enter your email to receive a reset link",
+                key="reset_email",
+            )
+            reset_cooldown = st.session_state.get("reset_cooldown", False)
+            if st.button(
+                "Reset link sent (wait 60s)" if reset_cooldown else "Send Reset Link",
+                use_container_width=True,
+                disabled=reset_cooldown,
+            ):
+                if not reset_email:
+                    st.error("Please enter your email address.")
+                else:
+                    try:
+                        from auth import reset_password
+                        reset_password(reset_email)
+                        st.session_state["reset_cooldown"] = True
+                        st.success("Password reset link sent! Check your email.")
+                    except Exception as exc:
+                        logging.error(f"Password reset failed: {exc}")
+                        st.error("Could not send reset link. Please try again.")
+
     with tab_signup:
         st.info(
             "Signup is for initial account creation only. "

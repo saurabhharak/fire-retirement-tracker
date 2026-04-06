@@ -93,6 +93,17 @@ def signup(email: str, password: str) -> dict:
     return {"user_id": response.user.id, "email": response.user.email}
 
 
+def reset_password(email: str) -> bool:
+    supabase = _get_supabase()
+    try:
+        supabase.auth.reset_password_for_email(email)
+        return True
+    except AuthApiError:
+        raise
+    except Exception as exc:
+        raise Exception(f"Could not send reset email: {exc}") from exc
+
+
 def logout() -> None:
     try:
         supabase = _get_supabase()

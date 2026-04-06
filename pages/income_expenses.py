@@ -340,6 +340,17 @@ if expenses:
     ehdr[3].markdown("**Frequency**")
     ehdr[4].markdown("**Action**")
 
+    @st.dialog("Confirm Removal")
+    def _confirm_deactivate(expense_id: str, expense_name: str):
+        st.markdown(f"Remove **{expense_name}** from your active expenses?")
+        c1, c2 = st.columns(2)
+        if c1.button("Cancel", use_container_width=True):
+            st.rerun()
+        if c2.button("Remove", type="primary", use_container_width=True):
+            deactivate_fixed_expense(expense_id, user_id)
+            log_audit(user_id, "deactivate_fixed_expense", {"name": expense_name})
+            st.rerun()
+
     for idx, exp in enumerate(expenses):
         ecols = st.columns([3, 1.5, 2, 1.5, 1])
         ecols[0].text(exp["name"])
@@ -349,9 +360,7 @@ if expenses:
         freq_label = {"monthly": "Monthly", "quarterly": "Quarterly", "yearly": "Yearly", "one-time": "One-time"}.get(exp["frequency"], exp["frequency"])
         ecols[3].text(freq_label)
         if ecols[4].button("Remove", key=f"deactivate_{exp['id']}"):
-            deactivate_fixed_expense(exp["id"], user_id)
-            log_audit(user_id, "deactivate_fixed_expense", {"name": exp["name"]})
-            st.rerun()
+            _confirm_deactivate(exp["id"], exp["name"])
 
     # Totals
     st.divider()

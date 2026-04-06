@@ -401,74 +401,104 @@ export default function Dashboard() {
       {(retirement.isLoading || growth.isLoading) ? (
         <LoadingState message="Loading projections..." />
       ) : (
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-[#D4A843]/5 border border-[#D4A843]/20 p-5 rounded-xl relative overflow-hidden">
-            <p className="text-[#D4A843] text-xs font-bold uppercase tracking-wider mb-2">
-              Projected Corpus
-            </p>
-            <p
-              className="text-2xl font-bold text-[#D4A843]"
-              style={{ fontVariantNumeric: "tabular-nums" }}
+        <>
+          {/* Warning: monthly expense not configured */}
+          {requiredCorpus === 0 && (
+            <div
+              className="bg-[#E5A100]/10 border border-[#E5A100]/30 rounded-xl p-4 flex items-start gap-3 cursor-pointer hover:bg-[#E5A100]/15 transition-colors"
+              onClick={() => navigate("/fire-settings")}
             >
-              {formatRupees(projectedCorpus)}
-            </p>
-            <p className="text-[#E8ECF1]/40 text-[10px] mt-2">
-              At retirement age ({inputs.retirement_age})
-            </p>
-          </div>
+              <span className="text-[#E5A100] text-lg leading-none">!</span>
+              <div>
+                <p className="text-sm font-medium text-[#E5A100]">
+                  Monthly expense not configured
+                </p>
+                <p className="text-xs text-[#E8ECF1]/50 mt-0.5">
+                  Required Corpus, Funded Ratio, and SWP calculations need your monthly expense.
+                  {fixedExpenseTotal > 0 && (
+                    <> Your tracked expenses total {formatRupees(Math.round(fixedExpenseTotal))}/mo — consider using this in FIRE Settings.</>
+                  )}
+                  {" "}Click here to update.
+                </p>
+              </div>
+            </div>
+          )}
 
-          <MetricCard
-            label="Required Corpus"
-            value={requiredCorpus}
-          />
-
-          <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30">
-            <p className="text-sm text-[#E8ECF1]/60 mb-1">Funded Ratio</p>
-            <div className="flex items-center space-x-3">
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-[#D4A843]/5 border border-[#D4A843]/20 p-5 rounded-xl relative overflow-hidden">
+              <p className="text-[#D4A843] text-xs font-bold uppercase tracking-wider mb-2">
+                Projected Corpus
+              </p>
               <p
-                className={`text-2xl font-bold ${
-                  fundedColor === "success"
-                    ? "text-[#00895E]"
-                    : fundedColor === "warning"
-                    ? "text-[#E5A100]"
-                    : "text-[#E07A5F]"
-                }`}
+                className="text-2xl font-bold text-[#D4A843]"
                 style={{ fontVariantNumeric: "tabular-nums" }}
               >
-                {fundedPct}%
+                {formatRupees(projectedCorpus)}
               </p>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                  fundedColor === "success"
-                    ? "bg-[#2E8B57]/20 text-[#2E8B57]"
-                    : fundedColor === "warning"
-                    ? "bg-[#E5A100]/20 text-[#E5A100]"
-                    : "bg-[#E07A5F]/20 text-[#E07A5F]"
-                }`}
-              >
-                {fundedLabel}
-              </span>
+              <p className="text-[#E8ECF1]/40 text-[10px] mt-2">
+                At retirement age ({inputs.retirement_age})
+              </p>
             </div>
-          </div>
 
-          <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30 border-l-4 border-l-[#D4A843]/40">
-            <p className="text-sm text-[#E8ECF1]/60 mb-1">Monthly SWP</p>
-            <p
-              className="text-2xl font-bold text-[#E8ECF1]"
-              style={{ fontVariantNumeric: "tabular-nums" }}
-            >
-              {formatRupees(Math.round(monthlySWP))}
-            </p>
-            <div
-              className={`mt-1 flex items-center text-xs font-bold ${
-                surplus >= 0 ? "text-[#2E8B57]" : "text-[#E5A100]"
-              }`}
-            >
-              {surplus >= 0 ? "+" : "-"} {formatRupees(Math.round(Math.abs(surplus)))}{" "}
-              vs expense ({formatRupees(Math.round(monthlyExpenseAtRetirement))})
+            <MetricCard
+              label="Required Corpus"
+              value={requiredCorpus}
+            />
+
+            <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30">
+              <p className="text-sm text-[#E8ECF1]/60 mb-1">Funded Ratio</p>
+              <div className="flex items-center space-x-3">
+                <p
+                  className={`text-2xl font-bold ${
+                    fundedColor === "success"
+                      ? "text-[#00895E]"
+                      : fundedColor === "warning"
+                      ? "text-[#E5A100]"
+                      : "text-[#E07A5F]"
+                  }`}
+                  style={{ fontVariantNumeric: "tabular-nums" }}
+                >
+                  {fundedPct}%
+                </p>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                    fundedColor === "success"
+                      ? "bg-[#2E8B57]/20 text-[#2E8B57]"
+                      : fundedColor === "warning"
+                      ? "bg-[#E5A100]/20 text-[#E5A100]"
+                      : "bg-[#E07A5F]/20 text-[#E07A5F]"
+                  }`}
+                >
+                  {fundedLabel}
+                </span>
+              </div>
             </div>
-          </div>
-        </section>
+
+            <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30 border-l-4 border-l-[#D4A843]/40">
+              <p className="text-sm text-[#E8ECF1]/60 mb-1">Monthly SWP</p>
+              <p
+                className="text-2xl font-bold text-[#E8ECF1]"
+                style={{ fontVariantNumeric: "tabular-nums" }}
+              >
+                {formatRupees(Math.round(monthlySWP))}
+              </p>
+              {monthlyExpenseAtRetirement > 0 ? (
+                <div
+                  className={`mt-1 flex items-center text-xs font-bold ${
+                    surplus >= 0 ? "text-[#2E8B57]" : "text-[#E5A100]"
+                  }`}
+                >
+                  {surplus >= 0 ? "+" : "-"} {formatRupees(Math.round(Math.abs(surplus)))}{" "}
+                  vs expense ({formatRupees(Math.round(monthlyExpenseAtRetirement))})
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-[#E8ECF1]/40">
+                  Set monthly expense in FIRE Settings
+                </p>
+              )}
+            </div>
+          </section>
+        </>
       )}
 
       {/* Portfolio Growth Chart */}

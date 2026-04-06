@@ -11,6 +11,7 @@ interface AuthContextType {
   sendOtp: (email: string) => Promise<void>;
   verifyOtp: (email: string, token: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -66,6 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   }, []);
 
+  const resetPassword = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) throw error;
+  }, []);
+
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setSession(null);
@@ -87,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       session, user, loading, isAuthenticated: !!session,
-      loginWithPassword, sendOtp, verifyOtp, signup, logout,
+      loginWithPassword, sendOtp, verifyOtp, signup, resetPassword, logout,
     }}>
       {children}
     </AuthContext.Provider>

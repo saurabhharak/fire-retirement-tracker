@@ -64,7 +64,7 @@ st.warning(
 confirmation = st.text_input(
     'Type **DELETE** to confirm account deletion:',
     key="delete_confirmation",
-    placeholder="DELETE",
+    placeholder="Type here to confirm",
 )
 
 if st.button("Delete My Account", type="primary", use_container_width=True):
