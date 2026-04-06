@@ -46,7 +46,7 @@ export function ProjectCharts({ summary }: Props) {
                 <YAxis type="category" dataKey="name" width={90}
                   tick={{ fill: "#E8ECF1", opacity: 0.7, fontSize: 11 }} />
                 <Tooltip
-                  formatter={(v: number) => [`\u20B9${formatIndian(v)}`, "Spent"]}
+                  formatter={(v) => [`\u20B9${formatIndian(Number(v))}`, "Spent"]}
                   contentStyle={{ backgroundColor: "#0D1B2A", border: "1px solid #1A3A5C", borderRadius: 8 }}
                   labelStyle={{ color: "#E8ECF1" }}
                   itemStyle={{ color: "#D4A843" }}
@@ -68,7 +68,7 @@ export function ProjectCharts({ summary }: Props) {
                 <YAxis tickFormatter={(v) => `${formatIndian(v)}`}
                   tick={{ fill: "#E8ECF1", opacity: 0.5, fontSize: 11 }} />
                 <Tooltip
-                  formatter={(v: number) => [`\u20B9${formatIndian(v)}`, "Spent"]}
+                  formatter={(v) => [`\u20B9${formatIndian(Number(v))}`, "Spent"]}
                   contentStyle={{ backgroundColor: "#0D1B2A", border: "1px solid #1A3A5C", borderRadius: 8 }}
                   labelStyle={{ color: "#E8ECF1" }}
                   itemStyle={{ color: "#00895E" }}
