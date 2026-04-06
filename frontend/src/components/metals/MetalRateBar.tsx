@@ -19,6 +19,13 @@ const METAL_LABELS: Record<string, string> = {
   platinum: "Platinum",
 };
 
+/** Valid purity keys per metal — used to filter out metadata fields */
+const VALID_PURITIES: Record<string, string[]> = {
+  gold: ["24K", "22K", "18K"],
+  silver: ["999", "925", "900"],
+  platinum: ["999", "950", "900"],
+};
+
 /** The "headline" purity for each metal shown in the "All" view */
 const HEADLINE_PURITY: Record<string, string> = {
   gold: "24K",
@@ -56,9 +63,11 @@ export function MetalRateBar({ rates, isLoading, selectedMetal }: MetalRateBarPr
           const color = METAL_COLORS[metal] ?? "#6B7280";
           const label = METAL_LABELS[metal] ?? metal;
 
-          // When a single metal is selected, show ALL purities; otherwise just the headline
+          // When a single metal is selected, show all valid purities; otherwise just the headline
+          // Filter out metadata keys (source, fetched_at, is_stale) from API response
+          const validPurities = VALID_PURITIES[metal] ?? [];
           const purities = selectedMetal
-            ? Object.keys(metalRates)
+            ? validPurities.filter((p) => metalRates[p] != null)
             : [HEADLINE_PURITY[metal]].filter((p) => p && metalRates[p]);
 
           return (
