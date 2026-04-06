@@ -7,7 +7,8 @@ from app.core.engine import (
 )
 from app.dependencies import CurrentUser, get_current_user
 from app.rate_limit import limiter
-from app.services import fire_inputs_svc
+from app.services import fire_inputs_svc, expenses_svc
+from app.services.expenses_svc import compute_monthly_expense_total
 
 router = APIRouter(tags=["projections"])
 
@@ -15,6 +16,11 @@ def _get_inputs(user: CurrentUser) -> dict:
     raw = fire_inputs_svc.load_fire_inputs(user.id, user.access_token)
     if raw is None:
         raise HTTPException(status_code=404, detail="Configure FIRE Settings first")
+    # Auto-compute monthly_expense from tracked expenses when not manually set
+    if raw.get("monthly_expense", 0) == 0:
+        active_expenses = expenses_svc.load_fixed_expenses(user.id, user.access_token, active_only=True)
+        raw = dict(raw)  # Don't mutate original
+        raw["monthly_expense"] = compute_monthly_expense_total(active_expenses)
     return compute_derived_inputs(raw)
 
 @router.get("/projections/growth")

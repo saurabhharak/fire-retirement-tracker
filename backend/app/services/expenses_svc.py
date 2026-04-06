@@ -49,3 +49,17 @@ def update_fixed_expense(expense_id: str, user_id: str, data: dict, access_token
 
 def deactivate_fixed_expense(expense_id: str, user_id: str, access_token: str) -> Optional[dict]:
     return update_fixed_expense(expense_id, user_id, {"is_active": False}, access_token)
+
+
+def compute_monthly_expense_total(expenses: list[dict]) -> float:
+    """Compute total monthly expense from active recurring expenses.
+
+    Monthly: as-is. Quarterly: /3. Yearly: /12. One-time: excluded.
+    """
+    divisors = {"monthly": 1, "quarterly": 3, "yearly": 12}
+    total = 0.0
+    for exp in expenses:
+        freq = exp.get("frequency", "monthly")
+        if freq in divisors:
+            total += exp["amount"] / divisors[freq]
+    return round(total, 2)
