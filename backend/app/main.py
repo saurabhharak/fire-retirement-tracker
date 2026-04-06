@@ -71,7 +71,7 @@ async def health_check():
 
 
 # Routers
-from app.routers import fire_inputs, income, expenses, sip_log, projections, export, precious_metals
+from app.routers import fire_inputs, income, expenses, sip_log, projections, export, precious_metals, projects, project_expenses
 
 app.include_router(fire_inputs.router, prefix="/api")
 app.include_router(income.router, prefix="/api")
@@ -80,3 +80,5 @@ app.include_router(precious_metals.router, prefix="/api")
 app.include_router(sip_log.router, prefix="/api")
 app.include_router(projections.router, prefix="/api")
 app.include_router(export.router, prefix="/api")
+app.include_router(projects.router, prefix="/api")
+app.include_router(project_expenses.router, prefix="/api")
