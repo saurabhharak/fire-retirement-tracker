@@ -206,3 +206,52 @@ class SipLogEntry(BaseModel):
     actual_invested: float = Field(ge=0)
     notes: str = Field(max_length=500, default="")
     funds: list[SipFund] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Project Expenses Models (multi-project expense tracking)
+# ---------------------------------------------------------------------------
+
+class ProjectCreate(BaseModel):
+    """Create a new project."""
+    name: str = Field(max_length=100)
+    status: Literal["active", "completed"] = "active"
+    budget: Optional[float] = Field(None, gt=0)
+    start_date: date
+    end_date: Optional[date] = None
+
+    @model_validator(mode="after")
+    def end_after_start(self):
+        if self.end_date and self.end_date < self.start_date:
+            raise ValueError("end_date must be >= start_date")
+        return self
+
+
+class ProjectUpdate(BaseModel):
+    """Partial update for a project."""
+    name: Optional[str] = Field(None, max_length=100)
+    status: Optional[Literal["active", "completed"]] = None
+    budget: Optional[float] = Field(None, gt=0)
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+
+
+class ProjectExpenseCreate(BaseModel):
+    """Create a new project expense."""
+    project_id: str
+    date: date
+    category: str = Field(max_length=50)
+    description: str = Field(max_length=200)
+    total_amount: Optional[float] = Field(None, ge=0)
+    paid_amount: float = Field(ge=0)
+    paid_by: str = Field(default="Saurabh Harak", max_length=100)
+
+
+class ProjectExpenseUpdate(BaseModel):
+    """Partial update for a project expense."""
+    date: Optional[date] = None
+    category: Optional[str] = Field(None, max_length=50)
+    description: Optional[str] = Field(None, max_length=200)
+    total_amount: Optional[float] = Field(None, ge=0)
+    paid_amount: Optional[float] = Field(None, ge=0)
+    paid_by: Optional[str] = Field(None, max_length=100)
