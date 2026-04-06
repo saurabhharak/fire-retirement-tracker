@@ -13,6 +13,12 @@ async def list_sip_logs(request: Request, limit: int = Query(60, ge=1, le=500), 
     entries = sip_log_svc.load_sip_logs(user.id, user.access_token, limit)
     return {"data": entries}
 
+@router.get("/sip-log/total-invested")
+@limiter.limit("60/minute")
+async def get_total_invested(request: Request, user: CurrentUser = Depends(get_current_user)) -> dict:
+    total = sip_log_svc.get_total_sip_invested(user.id, user.access_token)
+    return {"data": total}
+
 @router.post("/sip-log")
 @limiter.limit("30/minute")
 async def create_sip_log(request: Request, data: SipLogEntry, user: CurrentUser = Depends(get_current_user)) -> dict:

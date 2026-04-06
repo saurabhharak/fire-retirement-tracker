@@ -19,6 +19,7 @@ import {
 import { useIncome } from "../hooks/useIncome";
 import { useExpenses } from "../hooks/useExpenses";
 import { useGoldSummary } from "../hooks/useGoldSummary";
+import { useSipTotal } from "../hooks/useSipTotal";
 import { MetricCard } from "../components/MetricCard";
 import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
@@ -35,6 +36,7 @@ export default function Dashboard() {
   const income = useIncome(1);
   const expenses = useExpenses({ active: true });
   const goldSummary = useGoldSummary();
+  const sipTotal = useSipTotal();
 
   // Loading state
   if (fireInputs.isLoading) {
@@ -95,7 +97,8 @@ export default function Dashboard() {
   // Gold portfolio
   const goldValue = goldSummary.summary?.current_value ?? 0;
   const existingCorpus = inputs.existing_corpus ?? 0;
-  const totalNetWorth = existingCorpus + goldValue;
+  const totalSipInvested = sipTotal.data ?? 0;
+  const totalNetWorth = existingCorpus + totalSipInvested + goldValue;
 
   // Expenses: sum all active monthly-equivalent expenses (matches IncomeExpenses page formula)
   const fixedExpenseTotal = expenses.entries.reduce(
@@ -370,11 +373,17 @@ export default function Dashboard() {
       {/* Net Worth */}
       <section className="bg-[#D4A843]/5 border border-[#D4A843]/20 rounded-2xl p-6">
         <h3 className="text-xs font-bold uppercase tracking-wider text-[#D4A843] mb-4">Net Worth</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <p className="text-xs text-[#E8ECF1]/50 mb-1">Existing Corpus</p>
             <p className="text-lg font-bold text-[#E8ECF1]" style={{ fontVariantNumeric: "tabular-nums" }}>
               {formatRupees(Math.round(existingCorpus))}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-[#E8ECF1]/50 mb-1">SIP Invested</p>
+            <p className="text-lg font-bold text-[#00895E]" style={{ fontVariantNumeric: "tabular-nums" }}>
+              {totalSipInvested > 0 ? formatRupees(Math.round(totalSipInvested)) : "--"}
             </p>
           </div>
           <div>

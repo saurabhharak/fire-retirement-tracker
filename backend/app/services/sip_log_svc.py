@@ -35,3 +35,15 @@ def save_sip_log(user_id: str, data: dict, access_token: str) -> Optional[dict]:
     except Exception as e:
         logger.error("Could not save SIP log: %s", e)
         raise DatabaseError("Could not save SIP log") from e
+
+def get_total_sip_invested(user_id: str, access_token: str) -> float:
+    """Sum of actual_invested across all SIP log entries."""
+    try:
+        client = get_user_client(access_token)
+        result = client.table("sip_log").select("actual_invested").eq("user_id", user_id).execute()
+        if not result.data:
+            return 0.0
+        return sum(row["actual_invested"] for row in result.data)
+    except Exception as e:
+        logger.error("Could not compute total SIP invested: %s", e)
+        raise DatabaseError("Could not compute total SIP invested") from e
