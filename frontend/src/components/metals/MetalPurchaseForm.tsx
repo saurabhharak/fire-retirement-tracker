@@ -1,35 +1,67 @@
 import { useState } from "react";
-import type { GoldPurchaseCreate, GoldPurity, GoldOwner } from "../../hooks/useGoldPurchases";
+import type { MetalType, MetalOwner, PreciousMetalCreate } from "../../hooks/usePreciousMetals";
 import { inputCls, btnPrimary } from "../../lib/styles";
 
-interface GoldFormState {
+interface MetalFormState {
+  metal_type: MetalType;
   purchase_date: string;
   weight_grams: number | "";
   price_per_gram: number | "";
-  purity: GoldPurity;
-  owner: GoldOwner;
+  purity: string;
+  owner: MetalOwner;
   notes: string;
 }
 
-interface GoldPurchaseFormProps {
-  onSave: (data: GoldPurchaseCreate) => Promise<unknown>;
+interface MetalPurchaseFormProps {
+  onSave: (data: PreciousMetalCreate) => Promise<unknown>;
+  /** When set, pre-selects and locks the metal type dropdown */
+  lockedMetal?: MetalType | null;
 }
+
+const PURITY_OPTIONS: Record<MetalType, string[]> = {
+  gold: ["24K", "22K", "18K"],
+  silver: ["999", "925", "900"],
+  platinum: ["999", "950", "900"],
+};
+
+const DEFAULT_PURITY: Record<MetalType, string> = {
+  gold: "24K",
+  silver: "999",
+  platinum: "999",
+};
+
+const METAL_LABELS: Record<MetalType, string> = {
+  gold: "Gold",
+  silver: "Silver",
+  platinum: "Platinum",
+};
 
 function todayISO(): string {
   return new Date().toISOString().split("T")[0];
 }
 
-export function GoldPurchaseForm({ onSave }: GoldPurchaseFormProps) {
-  const [form, setForm] = useState<GoldFormState>({
+export function MetalPurchaseForm({ onSave, lockedMetal }: MetalPurchaseFormProps) {
+  const initialMetal: MetalType = lockedMetal ?? "gold";
+
+  const [form, setForm] = useState<MetalFormState>({
+    metal_type: initialMetal,
     purchase_date: todayISO(),
     weight_grams: "",
     price_per_gram: "",
-    purity: "24K",
+    purity: DEFAULT_PURITY[initialMetal],
     owner: "you",
     notes: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function handleMetalChange(metal: MetalType) {
+    setForm((prev) => ({
+      ...prev,
+      metal_type: metal,
+      purity: DEFAULT_PURITY[metal],
+    }));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,7 +81,8 @@ export function GoldPurchaseForm({ onSave }: GoldPurchaseFormProps) {
 
     setSaving(true);
     try {
-      const payload: GoldPurchaseCreate = {
+      const payload: PreciousMetalCreate = {
+        metal_type: form.metal_type,
         purchase_date: form.purchase_date,
         weight_grams: weight,
         price_per_gram: price,
@@ -59,10 +92,11 @@ export function GoldPurchaseForm({ onSave }: GoldPurchaseFormProps) {
       };
       await onSave(payload);
       setForm({
+        metal_type: lockedMetal ?? form.metal_type,
         purchase_date: todayISO(),
         weight_grams: "",
         price_per_gram: "",
-        purity: "24K",
+        purity: DEFAULT_PURITY[lockedMetal ?? form.metal_type],
         owner: "you",
         notes: "",
       });
@@ -73,18 +107,36 @@ export function GoldPurchaseForm({ onSave }: GoldPurchaseFormProps) {
     }
   }
 
+  const purities = PURITY_OPTIONS[form.metal_type];
+
   return (
     <form
       onSubmit={handleSubmit}
       className="bg-[#132E3D] rounded-xl p-4 mb-4 border border-[#1A3A5C]/30"
     >
-      <h3 className="text-sm font-medium text-[#E8ECF1]/80 mb-3">Add Gold Purchase</h3>
+      <h3 className="text-sm font-medium text-[#E8ECF1]/80 mb-3">Add Purchase</h3>
       {error && (
         <div className="mb-3 px-4 py-2 bg-[#E5A100]/10 border border-[#E5A100]/30 rounded-lg text-[#E5A100] text-sm">
           {error}
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-3 items-end">
+      <div className="grid grid-cols-1 md:grid-cols-8 gap-3 items-end">
+        {/* Metal type - first field */}
+        <div>
+          <label className="block text-xs text-[#E8ECF1]/60 mb-1">Metal</label>
+          <select
+            value={form.metal_type}
+            onChange={(e) => handleMetalChange(e.target.value as MetalType)}
+            disabled={!!lockedMetal}
+            className={inputCls}
+          >
+            {(Object.keys(METAL_LABELS) as MetalType[]).map((m) => (
+              <option key={m} value={m}>
+                {METAL_LABELS[m]}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="block text-xs text-[#E8ECF1]/60 mb-1">Date</label>
           <input
@@ -129,19 +181,21 @@ export function GoldPurchaseForm({ onSave }: GoldPurchaseFormProps) {
           <label className="block text-xs text-[#E8ECF1]/60 mb-1">Purity</label>
           <select
             value={form.purity}
-            onChange={(e) => setForm({ ...form, purity: e.target.value as GoldPurity })}
+            onChange={(e) => setForm({ ...form, purity: e.target.value })}
             className={inputCls}
           >
-            <option value="24K">24K</option>
-            <option value="22K">22K</option>
-            <option value="18K">18K</option>
+            {purities.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
           </select>
         </div>
         <div>
           <label className="block text-xs text-[#E8ECF1]/60 mb-1">Owner</label>
           <select
             value={form.owner}
-            onChange={(e) => setForm({ ...form, owner: e.target.value as GoldOwner })}
+            onChange={(e) => setForm({ ...form, owner: e.target.value as MetalOwner })}
             className={inputCls}
           >
             <option value="you">You</option>

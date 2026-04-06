@@ -18,7 +18,7 @@ import {
 } from "../hooks/useProjections";
 import { useIncome } from "../hooks/useIncome";
 import { useExpenses } from "../hooks/useExpenses";
-import { useGoldSummary } from "../hooks/useGoldSummary";
+import { useMetalsSummary } from "../hooks/useMetalsSummary";
 import { useSipTotal } from "../hooks/useSipTotal";
 import { MetricCard } from "../components/MetricCard";
 import { PageHeader } from "../components/PageHeader";
@@ -35,7 +35,7 @@ export default function Dashboard() {
   const retirement = useRetirementAnalysis();
   const income = useIncome(1);
   const expenses = useExpenses({ active: true });
-  const goldSummary = useGoldSummary();
+  const metalsSummary = useMetalsSummary();
   const sipTotal = useSipTotal();
 
   // Loading state
@@ -94,8 +94,8 @@ export default function Dashboard() {
     ? `Income (${MONTH_NAMES[latestIncome.month - 1]} ${latestIncome.year})`
     : "Latest Income";
 
-  // Gold portfolio
-  const goldValue = goldSummary.summary?.current_value ?? 0;
+  // Precious metals portfolio
+  const goldValue = metalsSummary.data?.current_value ?? 0;
   const existingCorpus = inputs.existing_corpus ?? 0;
   const totalSipInvested = sipTotal.data ?? 0;
   const totalNetWorth = existingCorpus + totalSipInvested + goldValue;
@@ -387,13 +387,13 @@ export default function Dashboard() {
             </p>
           </div>
           <div>
-            <p className="text-xs text-[#E8ECF1]/50 mb-1">Gold Holdings</p>
+            <p className="text-xs text-[#E8ECF1]/50 mb-1">Precious Metals</p>
             <p className="text-lg font-bold text-[#D4A843]" style={{ fontVariantNumeric: "tabular-nums" }}>
               {goldValue > 0 ? formatRupees(Math.round(goldValue)) : "--"}
             </p>
-            {goldValue > 0 && goldSummary.summary && (
+            {goldValue > 0 && metalsSummary.data && (
               <p className="text-[10px] text-[#E8ECF1]/40 mt-0.5">
-                {goldSummary.summary.total_weight_grams}g physical gold
+                {metalsSummary.data.total_weight_grams}g total metals
               </p>
             )}
           </div>
@@ -519,7 +519,7 @@ export default function Dashboard() {
                 Portfolio Growth Projection
               </h3>
               <p className="text-[#E8ECF1]/40 text-sm">
-                Long-term wealth compounding (Equity, Debt, Gold)
+                Long-term wealth compounding (Equity, Debt, Metals)
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -532,7 +532,7 @@ export default function Dashboard() {
               <div className="flex items-center space-x-2">
                 <span className="w-3 h-3 rounded-full bg-[#1A3A5C]" />
                 <span className="text-xs text-[#E8ECF1]/60 font-medium">
-                  Debt + Gold + Cash (
+                  Debt + Metals + Cash (
                   {Math.round((1 - inputs.equity_pct) * 100)}%)
                 </span>
               </div>
@@ -611,7 +611,7 @@ export default function Dashboard() {
                   }}
                   formatter={(value: any, name: any) => [
                     formatRupees(Number(value)),
-                    String(name) === "equity" ? "Equity" : "Debt+Gold+Cash",
+                    String(name) === "equity" ? "Equity" : "Debt+Metals+Cash",
                   ]}
                   labelFormatter={(label: any) => `Year ${label}`}
                 />

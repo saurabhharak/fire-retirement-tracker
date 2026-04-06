@@ -114,48 +114,6 @@ class FixedExpenseUpdate(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Gold Portfolio Models
-# ---------------------------------------------------------------------------
-
-class GoldPurchase(BaseModel):
-    """New gold purchase entry."""
-    purchase_date: date
-    weight_grams: float = Field(gt=0, le=100000)
-    price_per_gram: float = Field(gt=0, le=1000000)
-    purity: Literal["24K", "22K", "18K"]
-    owner: Literal["you", "wife", "household"] = "household"
-    notes: str = Field(max_length=500, default="")
-
-    @field_validator("purchase_date")
-    @classmethod
-    def purchase_date_in_range(cls, v: date) -> date:
-        from datetime import date as date_type
-        if not (date_type(2000, 1, 1) <= v <= date_type.today()):
-            raise ValueError("purchase_date must be between 2000-01-01 and today")
-        return v
-
-
-class GoldPurchaseUpdate(BaseModel):
-    """Partial update for a gold purchase."""
-    purchase_date: Optional[date] = None
-    weight_grams: Optional[float] = Field(None, gt=0, le=100000)
-    price_per_gram: Optional[float] = Field(None, gt=0, le=1000000)
-    purity: Optional[Literal["24K", "22K", "18K"]] = None
-    owner: Optional[Literal["you", "wife", "household"]] = None
-    notes: Optional[str] = Field(None, max_length=500)
-
-    @field_validator("purchase_date")
-    @classmethod
-    def purchase_date_in_range(cls, v: Optional[date]) -> Optional[date]:
-        if v is None:
-            return v
-        from datetime import date as date_type
-        if not (date_type(2000, 1, 1) <= v <= date_type.today()):
-            raise ValueError("purchase_date must be between 2000-01-01 and today")
-        return v
-
-
-# ---------------------------------------------------------------------------
 # Precious Metals Portfolio Models (multi-metal: gold, silver, platinum)
 # ---------------------------------------------------------------------------
 

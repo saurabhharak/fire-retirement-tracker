@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "WebSearch",
+      "WebFetch(domain:www.goldapi.io)",
+      "WebFetch(domain:metalpriceapi.com)",
+      "WebFetch(domain:metals.dev)",
+      "WebFetch(domain:gold-api.com)",
+      "Bash(python -m pytest backend/tests/unit/test_models_validation.py -x -q)",
+      "Bash(python -c \"from app.routers import gold; from app.services import gold_svc; print\\('OK'\\)\")",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:fire-retirement-tracker.onrender.com)",
+      "WebFetch(domain:fire-retirement-tracker-api.onrender.com)",
+      "WebFetch(domain:api.metals.dev)",
+      "Bash(find /c/Projects/fire-retirement-tracker -type f \\\\\\( -name \"*.md\" -o -name \"*.py\" -o -name \"*.sql\" \\\\\\) -exec grep -l \"income_entries\" {} \\\\;)",
+      "Bash(python:*)",
+      "Bash(xargs grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(npx vite:*)",
+      "Bash(echo \"EXIT_CODE=$?\")"
+    ]
+  }
+}

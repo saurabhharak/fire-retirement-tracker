@@ -14,7 +14,7 @@ const FundAllocation = lazy(() => import("./pages/FundAllocation"));
 const GrowthProjection = lazy(() => import("./pages/GrowthProjection"));
 const RetirementAnalysis = lazy(() => import("./pages/RetirementAnalysis"));
 const SipTracker = lazy(() => import("./pages/SipTracker"));
-const GoldPortfolio = lazy(() => import("./pages/GoldPortfolio"));
+const PreciousMetals = lazy(() => import("./pages/PreciousMetals"));
 const SettingsPrivacy = lazy(() => import("./pages/SettingsPrivacy"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -103,10 +103,10 @@ function App() {
               }
             />
             <Route
-              path="/gold-portfolio"
+              path="/precious-metals"
               element={
                 <ProtectedRoute>
-                  <GoldPortfolio />
+                  <PreciousMetals />
                 </ProtectedRoute>
               }
             />
