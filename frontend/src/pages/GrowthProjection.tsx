@@ -187,26 +187,26 @@ export default function GrowthProjection() {
     []
   );
 
-  // Convert debounced slider values -> API params (fractions not %)
+  // Cleanup debounce timer on unmount
+  useEffect(() => () => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+  }, []);
+
+  // Convert debounced slider values -> API params (all read from debouncedScenario)
   const scenarioApiParams: ScenarioParams = (() => {
-    if (!isScenarioActive || !sliders || !fireInputs) return {};
+    if (!isScenarioActive || !fireInputs) return {};
+    const ds = debouncedScenario;
     const params: ScenarioParams = {};
-    if (sliders.your_sip !== fireInputs.your_sip) params.your_sip = sliders.your_sip;
-    if (sliders.wife_sip !== fireInputs.wife_sip) params.wife_sip = sliders.wife_sip;
-    if (Math.abs(sliders.equity_return / 100 - fireInputs.equity_return) > 0.0001)
-      params.equity_return = debouncedScenario.equity_return !== undefined
-        ? debouncedScenario.equity_return / 100
-        : fireInputs.equity_return;
-    if (Math.abs(sliders.inflation / 100 - fireInputs.inflation) > 0.0001)
-      params.inflation = debouncedScenario.inflation !== undefined
-        ? debouncedScenario.inflation / 100
-        : fireInputs.inflation;
-    if (Math.abs(sliders.step_up_pct / 100 - fireInputs.step_up_pct) > 0.0001)
-      params.step_up_pct = debouncedScenario.step_up_pct !== undefined
-        ? debouncedScenario.step_up_pct / 100
-        : fireInputs.step_up_pct;
-    if (sliders.retirement_age !== fireInputs.retirement_age)
-      params.retirement_age = sliders.retirement_age;
+    if (ds.your_sip !== undefined && ds.your_sip !== fireInputs.your_sip) params.your_sip = ds.your_sip;
+    if (ds.wife_sip !== undefined && ds.wife_sip !== fireInputs.wife_sip) params.wife_sip = ds.wife_sip;
+    if (ds.equity_return !== undefined && Math.abs(ds.equity_return / 100 - fireInputs.equity_return) > 0.0001)
+      params.equity_return = ds.equity_return / 100;
+    if (ds.inflation !== undefined && Math.abs(ds.inflation / 100 - fireInputs.inflation) > 0.0001)
+      params.inflation = ds.inflation / 100;
+    if (ds.step_up_pct !== undefined && Math.abs(ds.step_up_pct / 100 - fireInputs.step_up_pct) > 0.0001)
+      params.step_up_pct = ds.step_up_pct / 100;
+    if (ds.retirement_age !== undefined && ds.retirement_age !== fireInputs.retirement_age)
+      params.retirement_age = ds.retirement_age;
     return params;
   })();
 
@@ -547,13 +547,13 @@ export default function GrowthProjection() {
                 >
                   <td className="px-3 py-2">{row.year}</td>
                   <td className="px-3 py-2">{row.age}</td>
-                  <td className="px-3 py-2">{formatRupees(row.monthly_sip)}</td>
-                  <td className="px-3 py-2">{formatRupees(row.annual_inv)}</td>
-                  <td className="px-3 py-2">{formatRupees(row.cumulative)}</td>
-                  <td className="px-3 py-2 font-semibold text-[#D4A843]">
+                  <td className="px-3 py-2" style={{ fontVariantNumeric: "tabular-nums" }}>{formatRupees(row.monthly_sip)}</td>
+                  <td className="px-3 py-2" style={{ fontVariantNumeric: "tabular-nums" }}>{formatRupees(row.annual_inv)}</td>
+                  <td className="px-3 py-2" style={{ fontVariantNumeric: "tabular-nums" }}>{formatRupees(row.cumulative)}</td>
+                  <td className="px-3 py-2 font-semibold text-[#D4A843]" style={{ fontVariantNumeric: "tabular-nums" }}>
                     {formatRupees(row.portfolio)}
                   </td>
-                  <td className="px-3 py-2 text-[#00895E]">{formatRupees(row.gains)}</td>
+                  <td className="px-3 py-2 text-[#00895E]" style={{ fontVariantNumeric: "tabular-nums" }}>{formatRupees(row.gains)}</td>
                 </tr>
               ))}
             </tbody>

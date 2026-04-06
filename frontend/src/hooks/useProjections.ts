@@ -66,7 +66,9 @@ export function useGrowthProjection(scenario?: ScenarioParams) {
     queryKey: ["projections", "growth", params],
     queryFn: () => {
       const qs = hasScenario
-        ? "?" + new URLSearchParams(params as Record<string, string>).toString()
+        ? "?" + new URLSearchParams(
+            Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)]))
+          ).toString()
         : "";
       return api
         .get<{ data: GrowthRow[] }>(`/api/projections/growth${qs}`)

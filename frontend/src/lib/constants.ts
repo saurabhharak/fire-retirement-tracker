@@ -15,7 +15,9 @@ export const COLORS = {
   error: "#E5A100",
 } as const;
 
-export const EXPENSE_CATEGORIES: { value: string; label: string; color: string }[] = [
+import type { ExpenseCategory } from "../hooks/useExpenses";
+
+export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string; color: string }[] = [
   { value: "housing", label: "Housing", color: "#D4A843" },
   { value: "food", label: "Food", color: "#00895E" },
   { value: "transport", label: "Transport", color: "#3B82F6" },

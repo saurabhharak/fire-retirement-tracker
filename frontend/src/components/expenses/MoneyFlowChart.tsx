@@ -64,7 +64,7 @@ export function MoneyFlowChart({ pieData, totalIncome, title = "Where Your Money
                 style={{ backgroundColor: item.color }}
               />
               <span className="text-sm text-[#E8ECF1]/80 w-32">{item.name}</span>
-              <span className="text-sm font-medium text-[#E8ECF1]">
+              <span className="text-sm font-medium text-[#E8ECF1]" style={{ fontVariantNumeric: "tabular-nums" }}>
                 {formatRupees(item.value)}
               </span>
               <span className="text-xs text-[#E8ECF1]/40">
