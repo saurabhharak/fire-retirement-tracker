@@ -25,7 +25,7 @@ def compute_derived_inputs(raw: dict) -> dict:
     """
     d = dict(raw)  # shallow copy
 
-    d["debt_pct"] = 1.0 - d["equity_pct"] - d["gold_pct"] - d["cash_pct"]
+    d["debt_pct"] = 1.0 - d["equity_pct"] - d["precious_metals_pct"] - d["cash_pct"]
     d["total_sip"] = d["your_sip"] + d["wife_sip"]
 
     # current_age: floor of fractional years since DOB
@@ -53,19 +53,19 @@ def blended_return(inputs: dict) -> float:
     """Weighted average nominal return across all asset classes.
 
     blended = equity_pct * equity_return + debt_pct * debt_return
-            + gold_pct * gold_return + cash_pct * cash_return
+            + precious_metals_pct * precious_metals_return + cash_pct * cash_return
 
     Mirrors conftest.py blended_return exactly.
     """
     # Compute debt_pct if not already present
     debt_pct = inputs.get(
         "debt_pct",
-        1.0 - inputs["equity_pct"] - inputs["gold_pct"] - inputs["cash_pct"],
+        1.0 - inputs["equity_pct"] - inputs["precious_metals_pct"] - inputs["cash_pct"],
     )
     return (
         inputs["equity_pct"] * inputs["equity_return"]
         + debt_pct * inputs["debt_return"]
-        + inputs["gold_pct"] * inputs["gold_return"]
+        + inputs["precious_metals_pct"] * inputs["precious_metals_return"]
         + inputs["cash_pct"] * inputs["cash_return"]
     )
 
@@ -95,7 +95,7 @@ def compute_growth_projection(inputs: dict) -> list[dict]:
     # Resolve debt_pct for blended return calculation
     debt_pct = inputs.get(
         "debt_pct",
-        1.0 - inputs["equity_pct"] - inputs["gold_pct"] - inputs["cash_pct"],
+        1.0 - inputs["equity_pct"] - inputs["precious_metals_pct"] - inputs["cash_pct"],
     )
     inputs_with_debt = dict(inputs, debt_pct=debt_pct)
     br = blended_return(inputs_with_debt)
@@ -233,7 +233,7 @@ def compute_fund_allocation(inputs: dict) -> list[dict]:
     """
     debt_pct = inputs.get(
         "debt_pct",
-        1.0 - inputs["equity_pct"] - inputs["gold_pct"] - inputs["cash_pct"],
+        1.0 - inputs["equity_pct"] - inputs["precious_metals_pct"] - inputs["cash_pct"],
     )
     total_sip = inputs.get("total_sip", inputs["your_sip"] + inputs["wife_sip"])
 
@@ -241,7 +241,7 @@ def compute_fund_allocation(inputs: dict) -> list[dict]:
     pct_lookup = {
         "equity_pct": inputs["equity_pct"],
         "debt_pct": debt_pct,
-        "gold_pct": inputs["gold_pct"],
+        "precious_metals_pct": inputs["precious_metals_pct"],
         "cash_pct": inputs["cash_pct"],
     }
 
@@ -254,7 +254,7 @@ def compute_fund_allocation(inputs: dict) -> list[dict]:
             name, category, parent_key, sub_pct = fund_tuple
             account = ""
 
-        if category in ("gold", "cash"):
+        if category in ("precious_metals", "cash"):
             pct = pct_lookup[parent_key]
         else:
             pct = pct_lookup[parent_key] * sub_pct / 100

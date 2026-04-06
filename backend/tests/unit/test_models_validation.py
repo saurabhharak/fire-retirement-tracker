@@ -9,8 +9,8 @@ def test_fire_inputs_valid():
     fi = FireInputs(dob="1997-07-11", retirement_age=40, life_expectancy=90,
                     your_sip=200000, wife_sip=50000, step_up_pct=0.10,
                     existing_corpus=0, equity_return=0.11, debt_return=0.07,
-                    gold_return=0.09, cash_return=0.05, inflation=0.065,
-                    swr=0.03, equity_pct=0.80, gold_pct=0.0, cash_pct=0.05,
+                    precious_metals_return=0.09, cash_return=0.05, inflation=0.065,
+                    swr=0.03, equity_pct=0.80, precious_metals_pct=0.0, cash_pct=0.05,
                     monthly_expense=125000)
     assert fi.retirement_age == 40
 
@@ -19,8 +19,8 @@ def test_fire_inputs_allocation_over_100_rejects():
         FireInputs(dob="1997-07-11", retirement_age=40, life_expectancy=90,
                    your_sip=200000, wife_sip=50000, step_up_pct=0.10,
                    existing_corpus=0, equity_return=0.11, debt_return=0.07,
-                   gold_return=0.09, cash_return=0.05, inflation=0.065,
-                   swr=0.03, equity_pct=0.80, gold_pct=0.15, cash_pct=0.10,
+                   precious_metals_return=0.09, cash_return=0.05, inflation=0.065,
+                   swr=0.03, equity_pct=0.80, precious_metals_pct=0.15, cash_pct=0.10,
                    monthly_expense=125000)
 
 def test_fire_inputs_life_expectancy_must_exceed_retirement():
@@ -28,8 +28,8 @@ def test_fire_inputs_life_expectancy_must_exceed_retirement():
         FireInputs(dob="1997-07-11", retirement_age=60, life_expectancy=50,
                    your_sip=200000, wife_sip=50000, step_up_pct=0.10,
                    existing_corpus=0, equity_return=0.11, debt_return=0.07,
-                   gold_return=0.09, cash_return=0.05, inflation=0.065,
-                   swr=0.03, equity_pct=0.75, gold_pct=0.05, cash_pct=0.05,
+                   precious_metals_return=0.09, cash_return=0.05, inflation=0.065,
+                   swr=0.03, equity_pct=0.75, precious_metals_pct=0.05, cash_pct=0.05,
                    monthly_expense=125000)
 
 def test_fire_inputs_negative_sip_rejects():
@@ -37,8 +37,8 @@ def test_fire_inputs_negative_sip_rejects():
         FireInputs(dob="1997-07-11", retirement_age=40, life_expectancy=90,
                    your_sip=-100, wife_sip=50000, step_up_pct=0.10,
                    existing_corpus=0, equity_return=0.11, debt_return=0.07,
-                   gold_return=0.09, cash_return=0.05, inflation=0.065,
-                   swr=0.03, equity_pct=0.75, gold_pct=0.05, cash_pct=0.05,
+                   precious_metals_return=0.09, cash_return=0.05, inflation=0.065,
+                   swr=0.03, equity_pct=0.75, precious_metals_pct=0.05, cash_pct=0.05,
                    monthly_expense=125000)
 
 def test_income_entry_valid():

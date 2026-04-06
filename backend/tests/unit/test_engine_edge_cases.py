@@ -9,13 +9,13 @@ from app.core.engine import (
 
 # Test blended_return
 def test_blended_return_standard():
-    inputs = {"equity_pct": 0.75, "debt_pct": 0.15, "gold_pct": 0.05, "cash_pct": 0.05,
-              "equity_return": 0.11, "debt_return": 0.07, "gold_return": 0.09, "cash_return": 0.05}
+    inputs = {"equity_pct": 0.75, "debt_pct": 0.15, "precious_metals_pct": 0.05, "cash_pct": 0.05,
+              "equity_return": 0.11, "debt_return": 0.07, "precious_metals_return": 0.09, "cash_return": 0.05}
     assert abs(blended_return(inputs) - 0.10) < 0.001
 
 def test_blended_return_all_equity():
-    inputs = {"equity_pct": 1.0, "debt_pct": 0.0, "gold_pct": 0.0, "cash_pct": 0.0,
-              "equity_return": 0.11, "debt_return": 0.07, "gold_return": 0.09, "cash_return": 0.05}
+    inputs = {"equity_pct": 1.0, "debt_pct": 0.0, "precious_metals_pct": 0.0, "cash_pct": 0.0,
+              "equity_return": 0.11, "debt_return": 0.07, "precious_metals_return": 0.09, "cash_return": 0.05}
     assert abs(blended_return(inputs) - 0.11) < 0.001
 
 # Test real_return (Fisher equation)
@@ -31,8 +31,8 @@ def test_derived_inputs_computes_all_fields():
     raw = {"dob": "1997-07-11", "retirement_age": 40, "life_expectancy": 90,
            "your_sip": 200000, "wife_sip": 50000, "step_up_pct": 0.10,
            "existing_corpus": 0, "equity_return": 0.11, "debt_return": 0.07,
-           "gold_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
-           "swr": 0.03, "equity_pct": 0.80, "gold_pct": 0.0, "cash_pct": 0.05,
+           "precious_metals_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
+           "swr": 0.03, "equity_pct": 0.80, "precious_metals_pct": 0.0, "cash_pct": 0.05,
            "monthly_expense": 125000}
     d = compute_derived_inputs(raw)
     assert d["total_sip"] == 250000
@@ -46,8 +46,8 @@ def test_derived_inputs_zero_sip():
     raw = {"dob": "1997-07-11", "retirement_age": 40, "life_expectancy": 90,
            "your_sip": 0, "wife_sip": 0, "step_up_pct": 0.10,
            "existing_corpus": 1000000, "equity_return": 0.11, "debt_return": 0.07,
-           "gold_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
-           "swr": 0.03, "equity_pct": 0.80, "gold_pct": 0.0, "cash_pct": 0.05,
+           "precious_metals_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
+           "swr": 0.03, "equity_pct": 0.80, "precious_metals_pct": 0.0, "cash_pct": 0.05,
            "monthly_expense": 125000}
     d = compute_derived_inputs(raw)
     assert d["total_sip"] == 0
@@ -57,8 +57,8 @@ def test_growth_projection_returns_41_rows():
     raw = {"dob": "1997-07-11", "retirement_age": 40, "life_expectancy": 90,
            "your_sip": 200000, "wife_sip": 50000, "step_up_pct": 0.10,
            "existing_corpus": 25000, "equity_return": 0.11, "debt_return": 0.07,
-           "gold_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
-           "swr": 0.03, "equity_pct": 0.80, "gold_pct": 0.0, "cash_pct": 0.05,
+           "precious_metals_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
+           "swr": 0.03, "equity_pct": 0.80, "precious_metals_pct": 0.0, "cash_pct": 0.05,
            "monthly_expense": 125000}
     d = compute_derived_inputs(raw)
     proj = compute_growth_projection(d)
@@ -68,8 +68,8 @@ def test_growth_projection_year0_no_investment():
     raw = {"dob": "1997-07-11", "retirement_age": 40, "life_expectancy": 90,
            "your_sip": 200000, "wife_sip": 50000, "step_up_pct": 0.10,
            "existing_corpus": 100000, "equity_return": 0.11, "debt_return": 0.07,
-           "gold_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
-           "swr": 0.03, "equity_pct": 0.80, "gold_pct": 0.0, "cash_pct": 0.05,
+           "precious_metals_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
+           "swr": 0.03, "equity_pct": 0.80, "precious_metals_pct": 0.0, "cash_pct": 0.05,
            "monthly_expense": 125000}
     d = compute_derived_inputs(raw)
     proj = compute_growth_projection(d)
@@ -80,8 +80,8 @@ def test_growth_projection_year1_base_sip():
     raw = {"dob": "1997-07-11", "retirement_age": 40, "life_expectancy": 90,
            "your_sip": 200000, "wife_sip": 50000, "step_up_pct": 0.10,
            "existing_corpus": 0, "equity_return": 0.11, "debt_return": 0.07,
-           "gold_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
-           "swr": 0.03, "equity_pct": 0.80, "gold_pct": 0.0, "cash_pct": 0.05,
+           "precious_metals_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
+           "swr": 0.03, "equity_pct": 0.80, "precious_metals_pct": 0.0, "cash_pct": 0.05,
            "monthly_expense": 125000}
     d = compute_derived_inputs(raw)
     proj = compute_growth_projection(d)
@@ -91,8 +91,8 @@ def test_growth_projection_post_retirement_sip_zero():
     raw = {"dob": "1997-07-11", "retirement_age": 40, "life_expectancy": 90,
            "your_sip": 200000, "wife_sip": 50000, "step_up_pct": 0.10,
            "existing_corpus": 0, "equity_return": 0.11, "debt_return": 0.07,
-           "gold_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
-           "swr": 0.03, "equity_pct": 0.80, "gold_pct": 0.0, "cash_pct": 0.05,
+           "precious_metals_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
+           "swr": 0.03, "equity_pct": 0.80, "precious_metals_pct": 0.0, "cash_pct": 0.05,
            "monthly_expense": 125000}
     d = compute_derived_inputs(raw)
     ytr = d["years_to_retirement"]
@@ -105,8 +105,8 @@ def test_fund_allocation_10_funds():
     raw = {"dob": "1997-07-11", "retirement_age": 40, "life_expectancy": 90,
            "your_sip": 200000, "wife_sip": 50000, "step_up_pct": 0.10,
            "existing_corpus": 0, "equity_return": 0.11, "debt_return": 0.07,
-           "gold_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
-           "swr": 0.03, "equity_pct": 0.80, "gold_pct": 0.0, "cash_pct": 0.05,
+           "precious_metals_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
+           "swr": 0.03, "equity_pct": 0.80, "precious_metals_pct": 0.0, "cash_pct": 0.05,
            "monthly_expense": 125000}
     d = compute_derived_inputs(raw)
     alloc = compute_fund_allocation(d)
@@ -116,8 +116,8 @@ def test_fund_allocation_sums_to_total_sip():
     raw = {"dob": "1997-07-11", "retirement_age": 40, "life_expectancy": 90,
            "your_sip": 200000, "wife_sip": 50000, "step_up_pct": 0.10,
            "existing_corpus": 0, "equity_return": 0.11, "debt_return": 0.07,
-           "gold_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
-           "swr": 0.03, "equity_pct": 0.80, "gold_pct": 0.0, "cash_pct": 0.05,
+           "precious_metals_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
+           "swr": 0.03, "equity_pct": 0.80, "precious_metals_pct": 0.0, "cash_pct": 0.05,
            "monthly_expense": 125000}
     d = compute_derived_inputs(raw)
     alloc = compute_fund_allocation(d)
@@ -129,8 +129,8 @@ def test_monthly_sips_192_months():
     raw = {"dob": "1997-07-11", "retirement_age": 40, "life_expectancy": 90,
            "your_sip": 200000, "wife_sip": 50000, "step_up_pct": 0.10,
            "existing_corpus": 0, "equity_return": 0.11, "debt_return": 0.07,
-           "gold_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
-           "swr": 0.03, "equity_pct": 0.80, "gold_pct": 0.0, "cash_pct": 0.05,
+           "precious_metals_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
+           "swr": 0.03, "equity_pct": 0.80, "precious_metals_pct": 0.0, "cash_pct": 0.05,
            "monthly_expense": 125000}
     d = compute_derived_inputs(raw)
     sips = compute_monthly_sips(d)
@@ -141,8 +141,8 @@ def test_retirement_metrics_has_required_fields():
     raw = {"dob": "1997-07-11", "retirement_age": 40, "life_expectancy": 90,
            "your_sip": 200000, "wife_sip": 50000, "step_up_pct": 0.10,
            "existing_corpus": 0, "equity_return": 0.11, "debt_return": 0.07,
-           "gold_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
-           "swr": 0.03, "equity_pct": 0.80, "gold_pct": 0.0, "cash_pct": 0.05,
+           "precious_metals_return": 0.09, "cash_return": 0.05, "inflation": 0.065,
+           "swr": 0.03, "equity_pct": 0.80, "precious_metals_pct": 0.0, "cash_pct": 0.05,
            "monthly_expense": 125000}
     d = compute_derived_inputs(raw)
     proj = compute_growth_projection(d)
