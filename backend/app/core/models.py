@@ -193,13 +193,34 @@ class PreciousMetalPurchase(BaseModel):
 
 
 class PreciousMetalPurchaseUpdate(BaseModel):
-    """Partial update for a precious metal purchase."""
+    """Partial update for a precious metal purchase.
+
+    If purity is provided, metal_type MUST also be provided so we can
+    validate the purity against the metal. The router can inject the
+    existing metal_type from the DB row.
+    """
+    metal_type: Optional[Literal["gold", "silver", "platinum"]] = None
     purchase_date: Optional[date] = None
     weight_grams: Optional[float] = Field(None, gt=0, le=100000)
     price_per_gram: Optional[float] = Field(None, gt=0, le=1000000)
     purity: Optional[str] = Field(None, max_length=5)
     owner: Optional[Literal["you", "wife", "household"]] = None
     notes: Optional[str] = Field(None, max_length=500)
+
+    @model_validator(mode="after")
+    def validate_purity_if_provided(self):
+        if self.purity is not None and self.metal_type is not None:
+            valid = {
+                "gold": ("24K", "22K", "18K"),
+                "silver": ("999", "925", "900"),
+                "platinum": ("999", "950", "900"),
+            }
+            allowed = valid.get(self.metal_type, ())
+            if self.purity not in allowed:
+                raise ValueError(
+                    f"Invalid purity '{self.purity}' for {self.metal_type}. Must be one of {allowed}"
+                )
+        return self
 
     @field_validator("purchase_date")
     @classmethod

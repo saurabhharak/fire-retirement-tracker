@@ -1,5 +1,5 @@
 """Precious metals API routes — purchases, rates, portfolio summary."""
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -21,7 +21,7 @@ router = APIRouter(tags=["precious-metals"])
 @limiter.limit("60/minute")
 async def get_metal_rates(
     request: Request,
-    metal: Optional[str] = Query(None, description="Filter by metal type (gold/silver/platinum)"),
+    metal: Optional[Literal["gold", "silver", "platinum"]] = Query(None, description="Filter by metal type"),
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     """Return current rates for all metals (or a single metal if ?metal= is provided)."""
@@ -35,7 +35,7 @@ async def get_metal_rates(
 @limiter.limit("30/minute")
 async def get_portfolio_summary(
     request: Request,
-    metal: Optional[str] = Query(None, description="Filter by metal type (gold/silver/platinum)"),
+    metal: Optional[Literal["gold", "silver", "platinum"]] = Query(None, description="Filter by metal type"),
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     """Return portfolio summary across all metals (or a single metal if ?metal= is provided)."""
@@ -49,7 +49,7 @@ async def get_portfolio_summary(
 @limiter.limit("60/minute")
 async def list_precious_metal_purchases(
     request: Request,
-    metal: Optional[str] = Query(None, description="Filter by metal type (gold/silver/platinum)"),
+    metal: Optional[Literal["gold", "silver", "platinum"]] = Query(None, description="Filter by metal type"),
     active: bool = Query(True),
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
