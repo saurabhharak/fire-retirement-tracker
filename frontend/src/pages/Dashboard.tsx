@@ -21,7 +21,7 @@ import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
 import { EmptyState } from "../components/EmptyState";
 import { formatRupees, formatIndian } from "../lib/formatIndian";
-import { toMonthlyAmount } from "../lib/expenseUtils";
+import { effectiveMonthlyAmount } from "../lib/expenseUtils";
 import { MONTH_NAMES } from "../lib/constants";
 
 export default function Dashboard() {
@@ -94,14 +94,16 @@ export default function Dashboard() {
   const existingCorpus = inputs.existing_corpus ?? 0;
   const totalNetWorth = existingCorpus + goldValue;
 
-  // Expenses: sum all active monthly-equivalent expenses
+  // Expenses: sum all active monthly-equivalent expenses (matches IncomeExpenses page formula)
   const fixedExpenseTotal = expenses.entries.reduce(
     (sum: number, e: { amount: number; frequency: string }) =>
-      sum + toMonthlyAmount(e.amount, e.frequency),
+      sum + effectiveMonthlyAmount(e.amount, e.frequency),
     0
   );
 
-  const monthlySavings = totalIncome - fixedExpenseTotal - inputs.monthly_expense;
+  const totalSip = (inputs.your_sip ?? 0) + (inputs.wife_sip ?? 0);
+  const totalOutflow = fixedExpenseTotal + totalSip;
+  const monthlySavings = totalIncome - totalOutflow;
   const savingsRate =
     totalIncome > 0
       ? Math.round((monthlySavings / totalIncome) * 1000) / 10

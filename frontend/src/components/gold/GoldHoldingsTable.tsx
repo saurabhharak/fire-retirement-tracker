@@ -1,11 +1,22 @@
-import type { GoldPurchaseEntry, GoldPurity, GoldOwner } from "../../hooks/useGoldPurchases";
+import { useState } from "react";
+import type { GoldPurchaseEntry, GoldPurchaseUpdate, GoldPurity, GoldOwner } from "../../hooks/useGoldPurchases";
 import type { GoldRate } from "../../hooks/useGoldRate";
 import { formatRupees } from "../../lib/formatIndian";
+import { inputCls } from "../../lib/styles";
 
 interface GoldHoldingsTableProps {
   entries: GoldPurchaseEntry[];
   rate: GoldRate | null;
   onDeactivate: (id: string) => void;
+  onEdit: (id: string, data: GoldPurchaseUpdate) => Promise<unknown>;
+}
+
+interface EditForm {
+  purchase_date: string;
+  weight_grams: number | "";
+  price_per_gram: number | "";
+  purity: GoldPurity;
+  owner: GoldOwner;
 }
 
 function ownerBadge(owner: GoldOwner) {
@@ -54,7 +65,49 @@ function formatDate(iso: string): string {
   }
 }
 
-export function GoldHoldingsTable({ entries, rate, onDeactivate }: GoldHoldingsTableProps) {
+export function GoldHoldingsTable({ entries, rate, onDeactivate, onEdit }: GoldHoldingsTableProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<EditForm | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  function startEdit(entry: GoldPurchaseEntry) {
+    if (!entry.id) return;
+    setEditingId(entry.id);
+    setEditForm({
+      purchase_date: entry.purchase_date,
+      weight_grams: entry.weight_grams,
+      price_per_gram: entry.price_per_gram,
+      purity: entry.purity,
+      owner: entry.owner,
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditForm(null);
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editForm) return;
+    const weight = Number(editForm.weight_grams);
+    const price = Number(editForm.price_per_gram);
+    if (!weight || weight <= 0 || !price || price <= 0) return;
+    setSaving(true);
+    try {
+      await onEdit(editingId, {
+        purchase_date: editForm.purchase_date,
+        weight_grams: weight,
+        price_per_gram: price,
+        purity: editForm.purity,
+        owner: editForm.owner,
+      });
+      setEditingId(null);
+      setEditForm(null);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (entries.length === 0) {
     return (
       <div className="text-center py-8 text-[#E8ECF1]/40 text-sm">
@@ -82,11 +135,94 @@ export function GoldHoldingsTable({ entries, rate, onDeactivate }: GoldHoldingsT
         </thead>
         <tbody>
           {entries.map((entry) => {
+            const isEditing = editingId === entry.id;
             const currentRate = getRateForPurity(rate, entry.purity);
             const currentValue = entry.weight_grams * currentRate;
             const pnl = rate ? currentValue - entry.total_cost : 0;
             const pnlPct = entry.total_cost > 0 && rate ? (pnl / entry.total_cost) * 100 : 0;
             const pnlColor = pnl >= 0 ? "text-[#00895E]" : "text-[#E5A100]";
+
+            if (isEditing && editForm) {
+              return (
+                <tr
+                  key={entry.id ?? entry.purchase_date}
+                  className="border-b border-[#1A3A5C]/20 bg-[#1A3A5C]/10"
+                >
+                  <td className="py-2 px-2">
+                    <input
+                      type="date"
+                      value={editForm.purchase_date}
+                      onChange={(e) => setEditForm({ ...editForm, purchase_date: e.target.value })}
+                      className={`${inputCls} w-32`}
+                    />
+                  </td>
+                  <td className="py-2 px-2">
+                    <select
+                      value={editForm.purity}
+                      onChange={(e) => setEditForm({ ...editForm, purity: e.target.value as GoldPurity })}
+                      className={`${inputCls} w-20`}
+                    >
+                      <option value="24K">24K</option>
+                      <option value="22K">22K</option>
+                      <option value="18K">18K</option>
+                    </select>
+                  </td>
+                  <td className="py-2 px-2">
+                    <select
+                      value={editForm.owner}
+                      onChange={(e) => setEditForm({ ...editForm, owner: e.target.value as GoldOwner })}
+                      className={`${inputCls} w-24`}
+                    >
+                      <option value="you">You</option>
+                      <option value="wife">Wife</option>
+                      <option value="household">Household</option>
+                    </select>
+                  </td>
+                  <td className="py-2 px-2">
+                    <input
+                      type="number"
+                      value={editForm.weight_grams}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, weight_grams: e.target.value === "" ? "" : Number(e.target.value) })
+                      }
+                      min={0.001}
+                      step={0.001}
+                      className={`${inputCls} w-20 text-right`}
+                    />
+                  </td>
+                  <td className="py-2 px-2">
+                    <input
+                      type="number"
+                      value={editForm.price_per_gram}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, price_per_gram: e.target.value === "" ? "" : Number(e.target.value) })
+                      }
+                      min={1}
+                      className={`${inputCls} w-24 text-right`}
+                    />
+                  </td>
+                  <td className="py-2 px-2 text-right text-[#E8ECF1]/40">--</td>
+                  <td className="py-2 px-2 text-right text-[#E8ECF1]/40">--</td>
+                  <td className="py-2 px-2 text-right text-[#E8ECF1]/40">--</td>
+                  <td className="py-2 px-2 text-right text-[#E8ECF1]/40">--</td>
+                  <td className="py-2 px-2 text-right space-x-2">
+                    <button
+                      onClick={saveEdit}
+                      disabled={saving}
+                      className="text-[#00895E] hover:text-[#00895E]/80 text-xs font-medium disabled:opacity-50"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="text-[#E8ECF1]/40 hover:text-[#E8ECF1]/60 text-xs font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              );
+            }
 
             return (
               <tr
@@ -132,7 +268,14 @@ export function GoldHoldingsTable({ entries, rate, onDeactivate }: GoldHoldingsT
                 >
                   {rate ? `${pnlPct >= 0 ? "+" : ""}${pnlPct.toFixed(2)}%` : "--"}
                 </td>
-                <td className="py-3 px-2 text-right">
+                <td className="py-3 px-2 text-right space-x-2">
+                  <button
+                    onClick={() => startEdit(entry)}
+                    disabled={!entry.id}
+                    className="text-[#3B82F6] hover:text-[#3B82F6]/80 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Edit
+                  </button>
                   <button
                     onClick={() => entry.id && onDeactivate(entry.id)}
                     disabled={!entry.id}

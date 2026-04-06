@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   BarChart,
   Bar,
@@ -71,6 +72,7 @@ function VerdictBadge({ verdict }: { verdict: string }) {
 }
 
 export default function RetirementAnalysis() {
+  const navigate = useNavigate();
   const { data, isLoading } = useRetirementAnalysis();
   const fireInputs = useFireInputs();
 
@@ -91,6 +93,16 @@ export default function RetirementAnalysis() {
         title="Retirement Analysis"
         subtitle="Evaluate your FIRE readiness with multiple withdrawal strategies"
       />
+
+      {data && data.required_corpus === 0 && (
+        <div className="bg-[#E5A100]/10 border border-[#E5A100]/30 rounded-lg px-4 py-3 text-[#E5A100] text-sm mb-4">
+          Monthly expense is not configured. Go to{" "}
+          <button onClick={() => navigate("/fire-settings")} className="underline font-medium">
+            FIRE Settings
+          </button>{" "}
+          and set your monthly expense to see accurate retirement projections.
+        </div>
+      )}
 
       {/* Key Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">

@@ -14,7 +14,7 @@ import { formatIndian } from "../lib/formatIndian";
 
 export default function GoldPortfolio() {
   // All hooks must be called before any early return (Rules of Hooks)
-  const { entries, isLoading: purchasesLoading, save, deactivate } = useGoldPurchases({ active: true });
+  const { entries, isLoading: purchasesLoading, save, update, deactivate } = useGoldPurchases({ active: true });
   const { rate, isLoading: rateLoading } = useGoldRate();
   const { summary, isLoading: summaryLoading } = useGoldSummary();
 
@@ -26,6 +26,15 @@ export default function GoldPortfolio() {
   }, [entries, ownerFilter]);
 
   const isLoading = purchasesLoading || summaryLoading;
+
+  async function handleGoldDeactivate(id: string) {
+    if (!window.confirm("Deactivate this gold purchase?")) return;
+    await deactivate(id);
+  }
+
+  async function handleGoldEdit(id: string, data: import("../hooks/useGoldPurchases").GoldPurchaseUpdate) {
+    await update({ id, data });
+  }
 
   if (isLoading) return <LoadingState message="Loading gold portfolio..." />;
 
@@ -97,7 +106,8 @@ export default function GoldPortfolio() {
         <GoldHoldingsTable
           entries={filteredEntries}
           rate={rate}
-          onDeactivate={deactivate}
+          onDeactivate={handleGoldDeactivate}
+          onEdit={handleGoldEdit}
         />
       </div>
     </div>

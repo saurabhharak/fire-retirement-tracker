@@ -1,12 +1,25 @@
-import type { FixedExpense, PaymentMethod } from "../../hooks/useExpenses";
+import { useState } from "react";
+import type { FixedExpense, FixedExpenseUpdate, PaymentMethod } from "../../hooks/useExpenses";
 import { formatRupees } from "../../lib/formatIndian";
 import { effectiveMonthlyAmount } from "../../lib/expenseUtils";
 import { MONTH_NAMES } from "../../lib/constants";
+import { inputCls } from "../../lib/styles";
 
 interface ExpenseTableProps {
   expenses: FixedExpense[];
   showOneTime: boolean;
   onDeactivate: (id: string) => void;
+  onEdit: (id: string, data: FixedExpenseUpdate) => Promise<unknown>;
+}
+
+interface EditForm {
+  name: string;
+  owner: "you" | "wife" | "household";
+  amount: number | "";
+  frequency: "monthly" | "quarterly" | "yearly" | "one-time";
+  payment_method: PaymentMethod;
+  expense_month: number;
+  expense_year: number;
 }
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
@@ -31,7 +44,55 @@ function ownerBadge(owner?: string) {
   );
 }
 
-export function ExpenseTable({ expenses, showOneTime, onDeactivate }: ExpenseTableProps) {
+export function ExpenseTable({ expenses, showOneTime, onDeactivate, onEdit }: ExpenseTableProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<EditForm | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  function startEdit(expense: FixedExpense) {
+    if (!expense.id) return;
+    setEditingId(expense.id);
+    setEditForm({
+      name: expense.name,
+      owner: expense.owner ?? "household",
+      amount: expense.amount,
+      frequency: expense.frequency,
+      payment_method: expense.payment_method ?? "cash",
+      expense_month: expense.expense_month ?? new Date().getMonth() + 1,
+      expense_year: expense.expense_year ?? new Date().getFullYear(),
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditForm(null);
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editForm) return;
+    const numAmount = Number(editForm.amount);
+    if (!numAmount || numAmount <= 0) return;
+    setSaving(true);
+    try {
+      const data: FixedExpenseUpdate = {
+        name: editForm.name,
+        owner: editForm.owner,
+        amount: numAmount,
+        frequency: editForm.frequency,
+        payment_method: editForm.payment_method,
+      };
+      if (editForm.frequency === "one-time") {
+        data.expense_month = editForm.expense_month;
+        data.expense_year = editForm.expense_year;
+      }
+      await onEdit(editingId, data);
+      setEditingId(null);
+      setEditForm(null);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (expenses.length === 0) {
     return (
       <div className="text-center py-8 text-[#E8ECF1]/40 text-sm">
@@ -56,43 +117,159 @@ export function ExpenseTable({ expenses, showOneTime, onDeactivate }: ExpenseTab
           </tr>
         </thead>
         <tbody>
-          {expenses.map((expense) => (
-            <tr
-              key={expense.id ?? expense.name}
-              className="border-b border-[#1A3A5C]/20 hover:bg-[#1A3A5C]/10 transition-colors"
-            >
-              <td className="py-3 px-2 text-[#E8ECF1]">{expense.name}</td>
-              <td className="py-3 px-2">{ownerBadge(expense.owner)}</td>
-              <td className="py-3 px-2 text-right text-[#E8ECF1]">
-                {formatRupees(expense.amount)}
-              </td>
-              <td className="py-3 px-2 text-[#E8ECF1]/60">
-                {PAYMENT_LABELS[expense.payment_method ?? "cash"]}
-              </td>
-              <td className="py-3 px-2 text-[#E8ECF1]/60 capitalize">
-                {expense.frequency}
-              </td>
-              {showOneTime && (
-                <td className="py-3 px-2 text-[#E8ECF1]/60">
-                  {expense.frequency === "one-time" && expense.expense_month
-                    ? `${MONTH_NAMES[expense.expense_month - 1]} ${expense.expense_year}`
-                    : "--"}
-                </td>
-              )}
-              <td className="py-3 px-2 text-right text-[#E8ECF1]/60">
-                {formatRupees(Math.round(effectiveMonthlyAmount(expense.amount, expense.frequency)))}
-              </td>
-              <td className="py-3 px-2 text-right space-x-2">
-                <button
-                  onClick={() => expense.id && onDeactivate(expense.id)}
-                  disabled={!expense.id}
-                  className="text-[#E5A100] hover:text-[#E5A100]/80 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          {expenses.map((expense) => {
+            const isEditing = editingId === expense.id;
+
+            if (isEditing && editForm) {
+              return (
+                <tr
+                  key={expense.id ?? expense.name}
+                  className="border-b border-[#1A3A5C]/20 bg-[#1A3A5C]/10"
                 >
-                  Deactivate
-                </button>
-              </td>
-            </tr>
-          ))}
+                  <td className="py-2 px-2">
+                    <input
+                      type="text"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      maxLength={100}
+                      className={`${inputCls} w-32`}
+                    />
+                  </td>
+                  <td className="py-2 px-2">
+                    <select
+                      value={editForm.owner}
+                      onChange={(e) => setEditForm({ ...editForm, owner: e.target.value as EditForm["owner"] })}
+                      className={`${inputCls} w-24`}
+                    >
+                      <option value="you">You</option>
+                      <option value="wife">Wife</option>
+                      <option value="household">Household</option>
+                    </select>
+                  </td>
+                  <td className="py-2 px-2">
+                    <input
+                      type="number"
+                      value={editForm.amount}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, amount: e.target.value === "" ? "" : Number(e.target.value) })
+                      }
+                      min={1}
+                      className={`${inputCls} w-24 text-right`}
+                    />
+                  </td>
+                  <td className="py-2 px-2">
+                    <select
+                      value={editForm.payment_method}
+                      onChange={(e) => setEditForm({ ...editForm, payment_method: e.target.value as PaymentMethod })}
+                      className={`${inputCls} w-28`}
+                    >
+                      <option value="upi">UPI</option>
+                      <option value="credit_card">Credit Card</option>
+                      <option value="cash">Cash</option>
+                    </select>
+                  </td>
+                  <td className="py-2 px-2">
+                    <select
+                      value={editForm.frequency}
+                      onChange={(e) => setEditForm({ ...editForm, frequency: e.target.value as EditForm["frequency"] })}
+                      className={`${inputCls} w-28`}
+                    >
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="yearly">Yearly</option>
+                      <option value="one-time">One-time</option>
+                    </select>
+                  </td>
+                  {showOneTime && (
+                    <td className="py-2 px-2">
+                      {editForm.frequency === "one-time" ? (
+                        <div className="flex gap-1">
+                          <select
+                            value={editForm.expense_month}
+                            onChange={(e) => setEditForm({ ...editForm, expense_month: Number(e.target.value) })}
+                            className={`${inputCls} w-20`}
+                          >
+                            {MONTH_NAMES.map((m, i) => (
+                              <option key={i} value={i + 1}>{m}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            value={editForm.expense_year}
+                            onChange={(e) => setEditForm({ ...editForm, expense_year: Number(e.target.value) })}
+                            className={`${inputCls} w-16`}
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-[#E8ECF1]/40">--</span>
+                      )}
+                    </td>
+                  )}
+                  <td className="py-2 px-2 text-right text-[#E8ECF1]/40">--</td>
+                  <td className="py-2 px-2 text-right space-x-2">
+                    <button
+                      onClick={saveEdit}
+                      disabled={saving}
+                      className="text-[#00895E] hover:text-[#00895E]/80 text-xs font-medium disabled:opacity-50"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="text-[#E8ECF1]/40 hover:text-[#E8ECF1]/60 text-xs font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              );
+            }
+
+            return (
+              <tr
+                key={expense.id ?? expense.name}
+                className="border-b border-[#1A3A5C]/20 hover:bg-[#1A3A5C]/10 transition-colors"
+              >
+                <td className="py-3 px-2 text-[#E8ECF1]">{expense.name}</td>
+                <td className="py-3 px-2">{ownerBadge(expense.owner)}</td>
+                <td className="py-3 px-2 text-right text-[#E8ECF1]">
+                  {formatRupees(expense.amount)}
+                </td>
+                <td className="py-3 px-2 text-[#E8ECF1]/60">
+                  {PAYMENT_LABELS[expense.payment_method ?? "cash"]}
+                </td>
+                <td className="py-3 px-2 text-[#E8ECF1]/60 capitalize">
+                  {expense.frequency}
+                </td>
+                {showOneTime && (
+                  <td className="py-3 px-2 text-[#E8ECF1]/60">
+                    {expense.frequency === "one-time" && expense.expense_month
+                      ? `${MONTH_NAMES[expense.expense_month - 1]} ${expense.expense_year}`
+                      : "--"}
+                  </td>
+                )}
+                <td className="py-3 px-2 text-right text-[#E8ECF1]/60">
+                  {formatRupees(Math.round(effectiveMonthlyAmount(expense.amount, expense.frequency)))}
+                </td>
+                <td className="py-3 px-2 text-right space-x-2">
+                  <button
+                    onClick={() => startEdit(expense)}
+                    disabled={!expense.id}
+                    className="text-[#3B82F6] hover:text-[#3B82F6]/80 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => expense.id && onDeactivate(expense.id)}
+                    disabled={!expense.id}
+                    className="text-[#E5A100] hover:text-[#E5A100]/80 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Deactivate
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

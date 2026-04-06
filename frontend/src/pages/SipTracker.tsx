@@ -81,7 +81,10 @@ export default function SipTracker() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
         <MetricCard label="Total Invested" value={totalInvested} color="gold" />
         <MetricCard label="Monthly Target" value={monthlyTarget} color="success" />
-        <MetricCard label="Next SIP Date" value={0} prefix="" suffix={getNextSipDate(currentDate, currentYear)} />
+        <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30 border-b-2 border-b-[#D4A843]/30">
+          <p className="text-sm text-[#E8ECF1]/60 mb-1">Next SIP Date</p>
+          <p className="text-2xl font-bold text-[#D4A843]">{getNextSipDate(currentDate, currentYear)}</p>
+        </div>
       </div>
 
       {/* Log Form */}

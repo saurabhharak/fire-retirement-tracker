@@ -34,6 +34,7 @@ function InputField({
   step,
   min,
   max,
+  isPercent = false,
 }: {
   label: string;
   name: string;
@@ -45,7 +46,24 @@ function InputField({
   step?: string;
   min?: string;
   max?: string;
+  isPercent?: boolean;
 }) {
+  // For percentage fields: display as X*100, suffix is always "%"
+  const displayValue = isPercent && typeof value === "number"
+    ? Math.round(value * 10000) / 100
+    : value;
+  const displaySuffix = isPercent ? "%" : suffix;
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (isPercent) {
+      // Convert percentage input back to decimal for storage
+      const pct = parseFloat(e.target.value);
+      onChange(name, isNaN(pct) ? "0" : String(pct / 100));
+    } else {
+      onChange(name, e.target.value);
+    }
+  }
+
   return (
     <div className="flex flex-col">
       <label className="text-xs text-[#E8ECF1]/50 font-medium mb-1.5 uppercase tracking-wider">
@@ -60,18 +78,18 @@ function InputField({
         <input
           type={type}
           name={name}
-          value={value}
-          onChange={(e) => onChange(name, e.target.value)}
+          value={displayValue}
+          onChange={handleInputChange}
           step={step}
           min={min}
           max={max}
           className={`w-full bg-[#0D1B2A] border border-[#1A3A5C]/50 rounded-lg py-2.5 text-[#E8ECF1] text-sm focus:outline-none focus:border-[#00895E] transition-colors ${
             prefix ? "pl-8" : "pl-3"
-          } ${suffix ? "pr-8" : "pr-3"}`}
+          } ${displaySuffix ? "pr-8" : "pr-3"}`}
         />
-        {suffix && (
+        {displaySuffix && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#E8ECF1]/40 text-sm">
-            {suffix}
+            {displaySuffix}
           </span>
         )}
       </div>
@@ -237,15 +255,15 @@ export default function FireSettings() {
               min="0"
             />
             <InputField
-              label="Annual Step-Up %"
+              label="Annual Step-Up"
               name="step_up_pct"
               value={form.step_up_pct}
               onChange={handleChange}
               type="number"
-              suffix="%"
-              step="0.01"
+              isPercent
+              step="0.1"
               min="0"
-              max="0.5"
+              max="50"
             />
             <InputField
               label="Existing Corpus"
@@ -280,9 +298,10 @@ export default function FireSettings() {
               value={form.swr}
               onChange={handleChange}
               type="number"
-              step="0.005"
-              min="0.01"
-              max="0.10"
+              isPercent
+              step="0.1"
+              min="1"
+              max="10"
             />
           </div>
         </section>
@@ -299,9 +318,10 @@ export default function FireSettings() {
               value={form.equity_return}
               onChange={handleChange}
               type="number"
-              step="0.01"
-              min="0.01"
-              max="0.3"
+              isPercent
+              step="0.1"
+              min="1"
+              max="30"
             />
             <InputField
               label="Debt"
@@ -309,9 +329,10 @@ export default function FireSettings() {
               value={form.debt_return}
               onChange={handleChange}
               type="number"
-              step="0.01"
-              min="0.01"
-              max="0.3"
+              isPercent
+              step="0.1"
+              min="1"
+              max="30"
             />
             <InputField
               label="Gold"
@@ -319,9 +340,10 @@ export default function FireSettings() {
               value={form.gold_return}
               onChange={handleChange}
               type="number"
-              step="0.01"
+              isPercent
+              step="0.1"
               min="0"
-              max="0.3"
+              max="30"
             />
             <InputField
               label="Cash"
@@ -329,9 +351,10 @@ export default function FireSettings() {
               value={form.cash_return}
               onChange={handleChange}
               type="number"
-              step="0.01"
+              isPercent
+              step="0.1"
               min="0"
-              max="0.3"
+              max="30"
             />
             <InputField
               label="Inflation"
@@ -339,9 +362,10 @@ export default function FireSettings() {
               value={form.inflation}
               onChange={handleChange}
               type="number"
-              step="0.01"
-              min="0.01"
-              max="0.2"
+              isPercent
+              step="0.1"
+              min="1"
+              max="20"
             />
           </div>
         </section>
@@ -358,9 +382,10 @@ export default function FireSettings() {
               value={form.equity_pct}
               onChange={handleChange}
               type="number"
-              step="0.01"
+              isPercent
+              step="1"
               min="0"
-              max="1"
+              max="100"
             />
             <InputField
               label="Gold"
@@ -368,9 +393,10 @@ export default function FireSettings() {
               value={form.gold_pct}
               onChange={handleChange}
               type="number"
-              step="0.01"
+              isPercent
+              step="1"
               min="0"
-              max="1"
+              max="100"
             />
             <InputField
               label="Cash"
@@ -378,9 +404,10 @@ export default function FireSettings() {
               value={form.cash_pct}
               onChange={handleChange}
               type="number"
-              step="0.01"
+              isPercent
+              step="1"
               min="0"
-              max="1"
+              max="100"
             />
             <div className="flex flex-col">
               <label className="text-xs text-[#E8ECF1]/50 font-medium mb-1.5 uppercase tracking-wider">

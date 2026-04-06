@@ -123,6 +123,10 @@ export default function IncomeExpenses() {
     await expenses.deactivate(id);
   }
 
+  async function handleExpenseEdit(id: string, data: import("../hooks/useExpenses").FixedExpenseUpdate) {
+    await expenses.update({ id, data });
+  }
+
   function handleMonthChange(month: number, year: number) {
     setSelectedMonth(month);
     setSelectedYear(year);
@@ -196,6 +200,7 @@ export default function IncomeExpenses() {
             expenses={filteredExpenses}
             showOneTime={activeTab !== "fixed"}
             onDeactivate={handleExpenseDeactivate}
+            onEdit={handleExpenseEdit}
           />
         </section>
       )}
