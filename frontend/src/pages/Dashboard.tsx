@@ -112,10 +112,10 @@ export default function Dashboard() {
   const monthlySavings = totalIncome - totalOutflow;
 
   // Asset allocation donut data
-  const debtPct = 1 - inputs.equity_pct - inputs.gold_pct - inputs.cash_pct;
+  const debtPct = 1 - inputs.equity_pct - inputs.precious_metals_pct - inputs.cash_pct;
   const allocationData = [
     { name: "Equity", value: Math.round(inputs.equity_pct * 100), color: "#00895E" },
-    { name: "Gold", value: Math.round(inputs.gold_pct * 100), color: "#D4A843" },
+    { name: "Precious Metals", value: Math.round(inputs.precious_metals_pct * 100), color: "#D4A843" },
     { name: "Cash", value: Math.round(inputs.cash_pct * 100), color: "#6B7280" },
     { name: "Debt", value: Math.round(debtPct * 100), color: "#1A3A5C" },
   ].filter((d) => d.value > 0);

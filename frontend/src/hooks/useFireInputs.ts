@@ -11,12 +11,12 @@ export interface FireInputsData {
   existing_corpus: number;
   equity_return: number;
   debt_return: number;
-  gold_return: number;
+  precious_metals_return: number;
   cash_return: number;
   inflation: number;
   swr: number;
   equity_pct: number;
-  gold_pct: number;
+  precious_metals_pct: number;
   cash_pct: number;
   monthly_expense: number;
 }

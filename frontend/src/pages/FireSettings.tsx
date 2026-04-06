@@ -13,12 +13,12 @@ const DEFAULT_INPUTS: FireInputsData = {
   existing_corpus: 0,
   equity_return: 0.11,
   debt_return: 0.07,
-  gold_return: 0.09,
+  precious_metals_return: 0.09,
   cash_return: 0.035,
   inflation: 0.06,
   swr: 0.03,
   equity_pct: 0.8,
-  gold_pct: 0.05,
+  precious_metals_pct: 0.05,
   cash_pct: 0.02,
   monthly_expense: 125000,
 };
@@ -123,12 +123,12 @@ export default function FireSettings() {
       "existing_corpus",
       "equity_return",
       "debt_return",
-      "gold_return",
+      "precious_metals_return",
       "cash_return",
       "inflation",
       "swr",
       "equity_pct",
-      "gold_pct",
+      "precious_metals_pct",
       "cash_pct",
       "monthly_expense",
     ];
@@ -144,16 +144,16 @@ export default function FireSettings() {
     }
   }
 
-  const debtPct = 1 - form.equity_pct - form.gold_pct - form.cash_pct;
-  const allocationTotal = form.equity_pct + form.gold_pct + form.cash_pct + Math.max(0, debtPct);
-  const allocationWarning = form.equity_pct + form.gold_pct + form.cash_pct > 1;
+  const debtPct = 1 - form.equity_pct - form.precious_metals_pct - form.cash_pct;
+  const allocationTotal = form.equity_pct + form.precious_metals_pct + form.cash_pct + Math.max(0, debtPct);
+  const allocationWarning = form.equity_pct + form.precious_metals_pct + form.cash_pct > 1;
 
   // Preview calculations
   const preview = useMemo(() => {
     const blended =
       form.equity_pct * form.equity_return +
       Math.max(0, debtPct) * form.debt_return +
-      form.gold_pct * form.gold_return +
+      form.precious_metals_pct * form.precious_metals_return +
       form.cash_pct * form.cash_return;
     const realReturn = (1 + blended) / (1 + form.inflation) - 1;
 
@@ -335,9 +335,9 @@ export default function FireSettings() {
               max="30"
             />
             <InputField
-              label="Gold"
-              name="gold_return"
-              value={form.gold_return}
+              label="Precious Metals"
+              name="precious_metals_return"
+              value={form.precious_metals_return}
               onChange={handleChange}
               type="number"
               isPercent
@@ -388,9 +388,9 @@ export default function FireSettings() {
               max="100"
             />
             <InputField
-              label="Gold"
-              name="gold_pct"
-              value={form.gold_pct}
+              label="Precious Metals"
+              name="precious_metals_pct"
+              value={form.precious_metals_pct}
               onChange={handleChange}
               type="number"
               isPercent
@@ -434,7 +434,7 @@ export default function FireSettings() {
           </div>
           {allocationWarning && (
             <p className="mt-3 text-sm text-[#E5A100] font-medium">
-              Equity + Gold + Cash exceeds 100%. Please adjust allocations.
+              Equity + Precious Metals + Cash exceeds 100%. Please adjust allocations.
             </p>
           )}
         </section>
