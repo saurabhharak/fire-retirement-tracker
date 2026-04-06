@@ -49,6 +49,7 @@ async def update_project(
     result = projects_svc.update_project(
         str(project_id), user.id, data.model_dump(exclude_unset=True), user.access_token,
     )
+    log_audit(user.id, "update_project", {"project_id": str(project_id)}, user.access_token)
     return {"data": result, "message": "Project updated"}
 
 

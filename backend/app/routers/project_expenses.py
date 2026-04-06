@@ -66,6 +66,7 @@ async def update_project_expense(
     result = project_expenses_svc.update_project_expense(
         str(expense_id), user.id, data.model_dump(exclude_unset=True), user.access_token,
     )
+    log_audit(user.id, "update_project_expense", {"expense_id": str(expense_id)}, user.access_token)
     return {"data": result, "message": "Expense updated"}
 
 

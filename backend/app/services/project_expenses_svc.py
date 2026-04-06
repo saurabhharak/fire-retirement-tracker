@@ -73,6 +73,11 @@ def update_project_expense(
     """Update a project expense by ID."""
     try:
         client = get_user_client(access_token)
+        # Verify ownership via the parent project
+        existing = client.table("project_expenses").select("project_id").eq("id", expense_id).execute()
+        if not existing.data:
+            raise DataNotFoundError("Project expense not found")
+        _verify_project_ownership(existing.data[0]["project_id"], user_id, access_token)
         response = (
             client.table("project_expenses")
             .update(data)
