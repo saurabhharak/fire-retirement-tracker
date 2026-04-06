@@ -71,12 +71,13 @@ async def health_check():
 
 
 # Routers
-from app.routers import fire_inputs, income, expenses, sip_log, projections, export, gold
+from app.routers import fire_inputs, income, expenses, sip_log, projections, export, gold, precious_metals
 
 app.include_router(fire_inputs.router, prefix="/api")
 app.include_router(income.router, prefix="/api")
 app.include_router(expenses.router, prefix="/api")
 app.include_router(gold.router, prefix="/api")
+app.include_router(precious_metals.router, prefix="/api")
 app.include_router(sip_log.router, prefix="/api")
 app.include_router(projections.router, prefix="/api")
 app.include_router(export.router, prefix="/api")

@@ -155,6 +155,63 @@ class GoldPurchaseUpdate(BaseModel):
         return v
 
 
+# ---------------------------------------------------------------------------
+# Precious Metals Portfolio Models (multi-metal: gold, silver, platinum)
+# ---------------------------------------------------------------------------
+
+class PreciousMetalPurchase(BaseModel):
+    """New precious metal purchase entry."""
+    metal_type: Literal["gold", "silver", "platinum"]
+    purchase_date: date
+    weight_grams: float = Field(gt=0, le=100000)
+    price_per_gram: float = Field(gt=0, le=1000000)
+    purity: str = Field(max_length=5)
+    owner: Literal["you", "wife", "household"] = "household"
+    notes: str = Field(max_length=500, default="")
+
+    @model_validator(mode="after")
+    def validate_purity_for_metal(self):
+        valid = {
+            "gold": ("24K", "22K", "18K"),
+            "silver": ("999", "925", "900"),
+            "platinum": ("999", "950", "900"),
+        }
+        allowed = valid.get(self.metal_type, ())
+        if self.purity not in allowed:
+            raise ValueError(
+                f"Invalid purity '{self.purity}' for {self.metal_type}. Must be one of {allowed}"
+            )
+        return self
+
+    @field_validator("purchase_date")
+    @classmethod
+    def purchase_date_in_range(cls, v: date) -> date:
+        from datetime import date as date_type
+        if not (date_type(2000, 1, 1) <= v <= date_type.today()):
+            raise ValueError("purchase_date must be between 2000-01-01 and today")
+        return v
+
+
+class PreciousMetalPurchaseUpdate(BaseModel):
+    """Partial update for a precious metal purchase."""
+    purchase_date: Optional[date] = None
+    weight_grams: Optional[float] = Field(None, gt=0, le=100000)
+    price_per_gram: Optional[float] = Field(None, gt=0, le=1000000)
+    purity: Optional[str] = Field(None, max_length=5)
+    owner: Optional[Literal["you", "wife", "household"]] = None
+    notes: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("purchase_date")
+    @classmethod
+    def purchase_date_in_range(cls, v: Optional[date]) -> Optional[date]:
+        if v is None:
+            return v
+        from datetime import date as date_type
+        if not (date_type(2000, 1, 1) <= v <= date_type.today()):
+            raise ValueError("purchase_date must be between 2000-01-01 and today")
+        return v
+
+
 class SipFund(BaseModel):
     """Per-fund SIP amount."""
     fund_name: str = Field(max_length=200)
