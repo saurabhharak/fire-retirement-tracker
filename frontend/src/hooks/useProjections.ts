@@ -44,13 +44,34 @@ export interface FundAllocationRow {
   account: string;
 }
 
-export function useGrowthProjection() {
+export interface ScenarioParams {
+  your_sip?: number;
+  wife_sip?: number;
+  equity_return?: number;
+  inflation?: number;
+  step_up_pct?: number;
+  retirement_age?: number;
+}
+
+export function useGrowthProjection(scenario?: ScenarioParams) {
+  // Build query string only for defined overrides
+  const params = scenario
+    ? Object.fromEntries(
+        Object.entries(scenario).filter(([, v]) => v !== undefined && v !== null)
+      )
+    : {};
+  const hasScenario = Object.keys(params).length > 0;
+
   return useQuery({
-    queryKey: ["projections", "growth"],
-    queryFn: () =>
-      api
-        .get<{ data: GrowthRow[] }>("/api/projections/growth")
-        .then((r) => r.data),
+    queryKey: ["projections", "growth", params],
+    queryFn: () => {
+      const qs = hasScenario
+        ? "?" + new URLSearchParams(params as Record<string, string>).toString()
+        : "";
+      return api
+        .get<{ data: GrowthRow[] }>(`/api/projections/growth${qs}`)
+        .then((r) => r.data);
+    },
   });
 }
 

@@ -7,6 +7,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { useFireInputs } from "../hooks/useFireInputs";
 import {
@@ -104,6 +107,21 @@ export default function Dashboard() {
   const totalSip = (inputs.your_sip ?? 0) + (inputs.wife_sip ?? 0);
   const totalOutflow = fixedExpenseTotal + totalSip;
   const monthlySavings = totalIncome - totalOutflow;
+
+  // Asset allocation donut data
+  const debtPct = 1 - inputs.equity_pct - inputs.gold_pct - inputs.cash_pct;
+  const allocationData = [
+    { name: "Equity", value: Math.round(inputs.equity_pct * 100), color: "#00895E" },
+    { name: "Gold", value: Math.round(inputs.gold_pct * 100), color: "#D4A843" },
+    { name: "Cash", value: Math.round(inputs.cash_pct * 100), color: "#6B7280" },
+    { name: "Debt", value: Math.round(debtPct * 100), color: "#1A3A5C" },
+  ].filter((d) => d.value > 0);
+
+  // Monthly outflow breakdown
+  const outflowData = [
+    { name: "Expenses", value: Math.round(fixedExpenseTotal), color: "#E07A5F" },
+    { name: "SIPs", value: Math.round(totalSip), color: "#00895E" },
+  ].filter((d) => d.value > 0);
   const savingsRate =
     totalIncome > 0
       ? Math.round((monthlySavings / totalIncome) * 1000) / 10
@@ -201,14 +219,153 @@ export default function Dashboard() {
           >
             {savingsRate}%
           </p>
-          <div className="mt-2 w-full h-1 bg-[#0D1B2A] rounded-full overflow-hidden">
+          <div className="mt-2 w-full h-2 bg-[#0D1B2A] rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#00895E] transition-all duration-500"
+              className="h-full bg-gradient-to-r from-[#00895E] to-emerald-400 transition-all duration-500"
               style={{ width: `${Math.min(100, Math.max(0, savingsRate))}%` }}
             />
           </div>
         </div>
       </section>
+
+      {/* Outflow Breakdown + Asset Allocation */}
+      {(allocationData.length > 0 || outflowData.length > 0) && (
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Outflow Breakdown */}
+          {outflowData.length > 0 && (
+            <div className="bg-[#1A3A5C]/20 backdrop-blur-sm rounded-2xl p-6 border border-white/5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#E8ECF1]/60 mb-4">
+                Monthly Outflow Breakdown
+              </h3>
+              <div className="flex items-center gap-6">
+                <div className="flex-shrink-0">
+                  <PieChart width={130} height={130}>
+                    <Pie
+                      data={outflowData}
+                      cx={60}
+                      cy={60}
+                      innerRadius={36}
+                      outerRadius={58}
+                      dataKey="value"
+                      strokeWidth={0}
+                    >
+                      {outflowData.map((entry, index) => (
+                        <Cell key={index} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#132E3D",
+                        border: "1px solid #1A3A5C",
+                        borderRadius: "8px",
+                        color: "#E8ECF1",
+                        fontSize: 12,
+                      }}
+                      formatter={(value: any) => [formatRupees(Number(value)), ""]}
+                    />
+                  </PieChart>
+                </div>
+                <div className="flex flex-col gap-3 flex-1">
+                  {outflowData.map((d, i) => {
+                    const total = outflowData.reduce((s, x) => s + x.value, 0);
+                    const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
+                    return (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: d.color }}
+                          />
+                          <span className="text-sm text-[#E8ECF1]/70">{d.name}</span>
+                        </div>
+                        <div className="text-right">
+                          <span
+                            className="text-sm font-semibold text-[#E8ECF1]"
+                            style={{ fontVariantNumeric: "tabular-nums" }}
+                          >
+                            {formatRupees(d.value)}
+                          </span>
+                          <span className="text-[10px] text-[#E8ECF1]/40 ml-1.5">
+                            {pct}%
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="pt-2 border-t border-white/5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-[#E8ECF1]/40 uppercase tracking-wider">Total</span>
+                      <span
+                        className="text-sm font-bold text-[#E8ECF1]"
+                        style={{ fontVariantNumeric: "tabular-nums" }}
+                      >
+                        {formatRupees(outflowData.reduce((s, x) => s + x.value, 0))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Asset Allocation */}
+          {allocationData.length > 0 && (
+            <div className="bg-[#1A3A5C]/20 backdrop-blur-sm rounded-2xl p-6 border border-white/5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#E8ECF1]/60 mb-4">
+                Asset Allocation
+              </h3>
+              <div className="flex items-center gap-6">
+                <div className="flex-shrink-0">
+                  <PieChart width={130} height={130}>
+                    <Pie
+                      data={allocationData}
+                      cx={60}
+                      cy={60}
+                      innerRadius={36}
+                      outerRadius={58}
+                      dataKey="value"
+                      strokeWidth={0}
+                    >
+                      {allocationData.map((entry, index) => (
+                        <Cell key={index} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#132E3D",
+                        border: "1px solid #1A3A5C",
+                        borderRadius: "8px",
+                        color: "#E8ECF1",
+                        fontSize: 12,
+                      }}
+                      formatter={(value: any) => [`${Number(value)}%`, ""]}
+                    />
+                  </PieChart>
+                </div>
+                <div className="flex flex-col gap-3 flex-1">
+                  {allocationData.map((d, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: d.color }}
+                        />
+                        <span className="text-sm text-[#E8ECF1]/70">{d.name}</span>
+                      </div>
+                      <span
+                        className="text-sm font-semibold text-[#E8ECF1]"
+                        style={{ fontVariantNumeric: "tabular-nums" }}
+                      >
+                        {d.value}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Net Worth */}
       <section className="bg-[#D4A843]/5 border border-[#D4A843]/20 rounded-2xl p-6">

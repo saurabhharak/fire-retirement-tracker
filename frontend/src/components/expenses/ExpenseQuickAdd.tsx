@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import type { FixedExpense, PaymentMethod } from "../../hooks/useExpenses";
-import { MONTH_NAMES } from "../../lib/constants";
+import type { FixedExpense, PaymentMethod, ExpenseCategory } from "../../hooks/useExpenses";
+import { MONTH_NAMES, EXPENSE_CATEGORIES } from "../../lib/constants";
 import { inputCls, btnPrimary } from "../../lib/styles";
 
 interface ExpenseFormState {
   name: string;
   owner: "you" | "wife" | "household";
+  category: ExpenseCategory;
   amount: number | "";
   frequency: "monthly" | "quarterly" | "yearly" | "one-time";
   payment_method: PaymentMethod;
@@ -23,6 +24,7 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
   const [form, setForm] = useState<ExpenseFormState>({
     name: "",
     owner: "you",
+    category: "other",
     amount: "",
     frequency: "monthly",
     payment_method: "upi",
@@ -59,6 +61,7 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
       const payload: Omit<FixedExpense, "id" | "is_active" | "created_at"> = {
         name: form.name,
         owner: form.owner,
+        category: form.category,
         amount: numAmount,
         frequency: form.frequency,
         payment_method: form.payment_method,
@@ -71,6 +74,7 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
       setForm({
         name: "",
         owner: "you",
+        category: "other",
         amount: "",
         frequency: "monthly",
         payment_method: "upi",
@@ -95,7 +99,7 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
           {error}
         </div>
       )}
-      <div className={`grid grid-cols-1 gap-3 items-end ${isOneTime ? "md:grid-cols-8" : "md:grid-cols-6"}`}>
+      <div className={`grid grid-cols-1 gap-3 items-end ${isOneTime ? "md:grid-cols-9" : "md:grid-cols-7"}`}>
         <div>
           <label className="block text-xs text-[#E8ECF1]/60 mb-1">Name</label>
           <input
@@ -118,6 +122,18 @@ export function ExpenseQuickAdd({ selectedMonth, selectedYear, onSave }: Expense
             <option value="you">You</option>
             <option value="wife">Wife</option>
             <option value="household">Household</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-[#E8ECF1]/60 mb-1">Category</label>
+          <select
+            value={form.category}
+            onChange={(e) => setForm({ ...form, category: e.target.value as ExpenseCategory })}
+            className={inputCls}
+          >
+            {EXPENSE_CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
           </select>
         </div>
         <div>

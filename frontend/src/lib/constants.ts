@@ -15,6 +15,19 @@ export const COLORS = {
   error: "#E5A100",
 } as const;
 
+export const EXPENSE_CATEGORIES: { value: string; label: string; color: string }[] = [
+  { value: "housing", label: "Housing", color: "#D4A843" },
+  { value: "food", label: "Food", color: "#00895E" },
+  { value: "transport", label: "Transport", color: "#3B82F6" },
+  { value: "utilities", label: "Utilities", color: "#6B7280" },
+  { value: "entertainment", label: "Entertainment", color: "#E07A5F" },
+  { value: "health", label: "Health", color: "#2E8B57" },
+  { value: "education", label: "Education", color: "#8B5CF6" },
+  { value: "insurance", label: "Insurance", color: "#1A3A5C" },
+  { value: "subscriptions", label: "Subscriptions", color: "#EC4899" },
+  { value: "other", label: "Other", color: "#9CA3AF" },
+];
+
 export const NAV_ITEMS = [
   { path: "/", label: "Dashboard", icon: "LayoutDashboard" },
   { path: "/income-expenses", label: "Income & Expenses", icon: "Coins" },

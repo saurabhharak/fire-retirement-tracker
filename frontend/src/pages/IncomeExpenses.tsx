@@ -6,6 +6,7 @@ import { useFireInputs } from "../hooks/useFireInputs";
 import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
 import { effectiveMonthlyAmount, isExpenseInMonth } from "../lib/expenseUtils";
+import { EXPENSE_CATEGORIES } from "../lib/constants";
 
 import { MonthNavigator } from "../components/expenses/MonthNavigator";
 import { OwnerFilter } from "../components/expenses/OwnerFilter";
@@ -112,6 +113,22 @@ export default function IncomeExpenses() {
     [totalSip, yourExpenses, wifeExpenses, householdExpenses, savings],
   );
 
+  // Category breakdown pie data (expenses only, not SIP)
+  const categoryPieData = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const e of allMonthExpenses) {
+      const key = e.category ?? "other";
+      totals[key] = (totals[key] ?? 0) + effectiveMonthlyAmount(e.amount, e.frequency);
+    }
+    return EXPENSE_CATEGORIES
+      .map((cat) => ({
+        name: cat.label,
+        value: Math.round(totals[cat.value] ?? 0),
+        color: cat.color,
+      }))
+      .filter((d) => d.value > 0);
+  }, [allMonthExpenses]);
+
   /* Loading — after all hooks */
   if (income.isLoading || expenses.isLoading || fireInputs.isLoading) {
     return <LoadingState message="Loading income & expenses..." />;
@@ -152,8 +169,19 @@ export default function IncomeExpenses() {
         noIncomeForMonth={noIncomeForMonth}
       />
 
-      {/* Money Flow Chart */}
-      <MoneyFlowChart pieData={pieData} totalIncome={totalIncome} />
+      {/* Charts: Money Flow + Category Breakdown side by side when both have data */}
+      {categoryPieData.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <MoneyFlowChart pieData={pieData} totalIncome={totalIncome} />
+          <MoneyFlowChart
+            pieData={categoryPieData}
+            totalIncome={fixedExpenseMonthly}
+            title="Expenses by Category"
+          />
+        </div>
+      ) : (
+        <MoneyFlowChart pieData={pieData} totalIncome={totalIncome} />
+      )}
 
       {/* Tabs */}
       <ExpenseTabs activeTab={activeTab} onChange={setActiveTab} />

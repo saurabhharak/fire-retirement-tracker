@@ -16,15 +16,16 @@ interface PieDataItem {
 interface MoneyFlowChartProps {
   pieData: PieDataItem[];
   totalIncome: number;
+  title?: string;
 }
 
-export function MoneyFlowChart({ pieData, totalIncome }: MoneyFlowChartProps) {
+export function MoneyFlowChart({ pieData, totalIncome, title = "Where Your Money Goes" }: MoneyFlowChartProps) {
   if (pieData.length === 0) return null;
 
   return (
     <section className="bg-[#1A3A5C]/20 backdrop-blur-sm rounded-2xl p-6 border border-white/5">
       <h2 className="text-lg font-semibold text-[#E8ECF1] mb-6">
-        Where Your Money Goes
+        {title}
       </h2>
       <div className="flex flex-col lg:flex-row items-center gap-8">
         <div className="w-64 h-64">

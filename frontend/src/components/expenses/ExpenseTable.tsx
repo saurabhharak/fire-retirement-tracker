@@ -1,8 +1,8 @@
 import { useState } from "react";
-import type { FixedExpense, FixedExpenseUpdate, PaymentMethod } from "../../hooks/useExpenses";
+import type { FixedExpense, FixedExpenseUpdate, PaymentMethod, ExpenseCategory } from "../../hooks/useExpenses";
 import { formatRupees } from "../../lib/formatIndian";
 import { effectiveMonthlyAmount } from "../../lib/expenseUtils";
-import { MONTH_NAMES } from "../../lib/constants";
+import { MONTH_NAMES, EXPENSE_CATEGORIES } from "../../lib/constants";
 import { inputCls } from "../../lib/styles";
 
 interface ExpenseTableProps {
@@ -15,6 +15,7 @@ interface ExpenseTableProps {
 interface EditForm {
   name: string;
   owner: "you" | "wife" | "household";
+  category: ExpenseCategory;
   amount: number | "";
   frequency: "monthly" | "quarterly" | "yearly" | "one-time";
   payment_method: PaymentMethod;
@@ -44,6 +45,20 @@ function ownerBadge(owner?: string) {
   );
 }
 
+function categoryBadge(category?: string) {
+  const cat =
+    EXPENSE_CATEGORIES.find((c) => c.value === (category ?? "other")) ??
+    EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1];
+  return (
+    <span
+      className="text-xs font-medium px-2 py-0.5 rounded-full"
+      style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+    >
+      {cat.label}
+    </span>
+  );
+}
+
 export function ExpenseTable({ expenses, showOneTime, onDeactivate, onEdit }: ExpenseTableProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
@@ -55,6 +70,7 @@ export function ExpenseTable({ expenses, showOneTime, onDeactivate, onEdit }: Ex
     setEditForm({
       name: expense.name,
       owner: expense.owner ?? "household",
+      category: expense.category ?? "other",
       amount: expense.amount,
       frequency: expense.frequency,
       payment_method: expense.payment_method ?? "cash",
@@ -77,6 +93,7 @@ export function ExpenseTable({ expenses, showOneTime, onDeactivate, onEdit }: Ex
       const data: FixedExpenseUpdate = {
         name: editForm.name,
         owner: editForm.owner,
+        category: editForm.category,
         amount: numAmount,
         frequency: editForm.frequency,
         payment_method: editForm.payment_method,
@@ -108,6 +125,7 @@ export function ExpenseTable({ expenses, showOneTime, onDeactivate, onEdit }: Ex
           <tr className="text-[#E8ECF1]/40 text-xs uppercase tracking-wider border-b border-[#1A3A5C]/30">
             <th className="text-left py-3 px-2">Name</th>
             <th className="text-left py-3 px-2">Owner</th>
+            <th className="text-left py-3 px-2">Category</th>
             <th className="text-right py-3 px-2">Amount</th>
             <th className="text-left py-3 px-2">Paid via</th>
             <th className="text-left py-3 px-2">Frequency</th>
@@ -144,6 +162,17 @@ export function ExpenseTable({ expenses, showOneTime, onDeactivate, onEdit }: Ex
                       <option value="you">You</option>
                       <option value="wife">Wife</option>
                       <option value="household">Household</option>
+                    </select>
+                  </td>
+                  <td className="py-2 px-2">
+                    <select
+                      value={editForm.category}
+                      onChange={(e) => setEditForm({ ...editForm, category: e.target.value as ExpenseCategory })}
+                      className={`${inputCls} w-28`}
+                    >
+                      {EXPENSE_CATEGORIES.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
                     </select>
                   </td>
                   <td className="py-2 px-2">
@@ -232,6 +261,7 @@ export function ExpenseTable({ expenses, showOneTime, onDeactivate, onEdit }: Ex
               >
                 <td className="py-3 px-2 text-[#E8ECF1]">{expense.name}</td>
                 <td className="py-3 px-2">{ownerBadge(expense.owner)}</td>
+                <td className="py-3 px-2">{categoryBadge(expense.category)}</td>
                 <td className="py-3 px-2 text-right text-[#E8ECF1]">
                   {formatRupees(expense.amount)}
                 </td>

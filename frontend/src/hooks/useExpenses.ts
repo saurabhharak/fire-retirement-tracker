@@ -3,6 +3,8 @@ import { api } from "../lib/api";
 
 export type PaymentMethod = "upi" | "credit_card" | "cash";
 
+export type ExpenseCategory = "housing" | "food" | "transport" | "utilities" | "entertainment" | "health" | "education" | "insurance" | "subscriptions" | "other";
+
 export interface FixedExpense {
   id?: string;
   name: string;
@@ -11,6 +13,7 @@ export interface FixedExpense {
   is_active?: boolean;
   owner?: "you" | "wife" | "household";
   payment_method?: PaymentMethod;
+  category?: ExpenseCategory;
   expense_month?: number;
   expense_year?: number;
   created_at?: string;
@@ -23,6 +26,7 @@ export interface FixedExpenseUpdate {
   is_active?: boolean;
   owner?: "you" | "wife" | "household";
   payment_method?: PaymentMethod;
+  category?: ExpenseCategory;
   expense_month?: number;
   expense_year?: number;
 }
