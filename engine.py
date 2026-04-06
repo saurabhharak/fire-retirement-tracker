@@ -285,7 +285,7 @@ def compute_fund_allocation(inputs: dict) -> list[dict]:
             name, category, parent_key, sub_pct = fund_tuple
             account = ""
 
-        if category in ("gold", "cash"):
+        if category in ("precious_metals", "cash"):
             pct = pct_lookup[parent_key]
         else:
             pct = pct_lookup[parent_key] * sub_pct / 100
