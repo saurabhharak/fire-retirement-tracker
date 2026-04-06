@@ -51,6 +51,12 @@ def load_project_expenses(
         raise DatabaseError("Could not load project expenses") from e
 
 
+def _serialize_dates(data: dict) -> dict:
+    """Convert date objects to ISO strings for Supabase JSON serialization."""
+    from datetime import date as date_type
+    return {k: v.isoformat() if isinstance(v, date_type) else v for k, v in data.items()}
+
+
 def save_project_expense(
     user_id: str, data: dict, access_token: str
 ) -> Optional[dict]:
@@ -58,7 +64,7 @@ def save_project_expense(
     try:
         _verify_project_ownership(data["project_id"], user_id, access_token)
         client = get_user_client(access_token)
-        response = client.table("project_expenses").insert(data).execute()
+        response = client.table("project_expenses").insert(_serialize_dates(data)).execute()
         return response.data[0] if response.data else None
     except DataNotFoundError:
         raise
@@ -80,7 +86,7 @@ def update_project_expense(
         _verify_project_ownership(existing.data[0]["project_id"], user_id, access_token)
         response = (
             client.table("project_expenses")
-            .update(data)
+            .update(_serialize_dates(data))
             .eq("id", expense_id)
             .execute()
         )

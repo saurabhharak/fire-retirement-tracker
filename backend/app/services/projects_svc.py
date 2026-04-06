@@ -29,11 +29,17 @@ def load_projects(
         raise DatabaseError("Could not load projects") from e
 
 
+def _serialize_dates(data: dict) -> dict:
+    """Convert date objects to ISO strings for Supabase JSON serialization."""
+    from datetime import date as date_type
+    return {k: v.isoformat() if isinstance(v, date_type) else v for k, v in data.items()}
+
+
 def save_project(user_id: str, data: dict, access_token: str) -> Optional[dict]:
     """Create a new project."""
     try:
         client = get_user_client(access_token)
-        payload = {**data, "user_id": user_id}
+        payload = {**_serialize_dates(data), "user_id": user_id}
         response = client.table("projects").insert(payload).execute()
         return response.data[0] if response.data else None
     except Exception as e:
@@ -49,7 +55,7 @@ def update_project(
         client = get_user_client(access_token)
         response = (
             client.table("projects")
-            .update(data)
+            .update(_serialize_dates(data))
             .eq("id", project_id)
             .eq("user_id", user_id)
             .execute()
