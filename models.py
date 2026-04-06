@@ -22,12 +22,12 @@ class FireInputs(BaseModel):
     existing_corpus: float = Field(ge=0)
     equity_return: float = Field(gt=0, le=0.3)
     debt_return: float = Field(gt=0, le=0.3)
-    gold_return: float = Field(ge=0, le=0.3)
+    precious_metals_return: float = Field(ge=0, le=0.3)
     cash_return: float = Field(ge=0, le=0.3)
     inflation: float = Field(gt=0, le=0.2)
     swr: float = Field(gt=0, le=0.10)
     equity_pct: float = Field(ge=0, le=1.0)
-    gold_pct: float = Field(ge=0, le=1.0)
+    precious_metals_pct: float = Field(ge=0, le=1.0)
     cash_pct: float = Field(ge=0, le=1.0)
     monthly_expense: float = Field(ge=0)
 
@@ -43,10 +43,10 @@ class FireInputs(BaseModel):
     @classmethod
     def allocation_sum(cls, v: float, info) -> float:
         equity_pct = info.data.get("equity_pct", 0)
-        gold_pct = info.data.get("gold_pct", 0)
-        total = equity_pct + gold_pct + v
+        precious_metals_pct = info.data.get("precious_metals_pct", 0)
+        total = equity_pct + precious_metals_pct + v
         if total > 1.0:
-            raise ValueError("Equity + Gold + Cash cannot exceed 100%")
+            raise ValueError("Equity + Precious Metals + Cash cannot exceed 100%")
         return v
 
 

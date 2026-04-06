@@ -182,11 +182,11 @@ with st.form("fire_settings"):
         )
 
     with col_r3:
-        gold_return = st.number_input(
-            "Gold Return %",
+        precious_metals_return = st.number_input(
+            "Precious Metals Return %",
             min_value=0.0,
             max_value=30.0,
-            value=float(defaults.get("gold_return", 0.08)) * 100,
+            value=float(defaults.get("precious_metals_return", 0.08)) * 100,
             step=0.5,
             format="%.1f",
         )
@@ -226,11 +226,11 @@ with st.form("fire_settings"):
         )
 
     with col_a2:
-        gold_pct = st.number_input(
-            "Gold %",
+        precious_metals_pct = st.number_input(
+            "Precious Metals %",
             min_value=0.0,
             max_value=100.0,
-            value=float(defaults.get("gold_pct", 0.10)) * 100,
+            value=float(defaults.get("precious_metals_pct", 0.10)) * 100,
             step=1.0,
             format="%.0f",
         )
@@ -246,7 +246,7 @@ with st.form("fire_settings"):
         )
 
     # Computed debt % and total
-    alloc_total = equity_pct + gold_pct + cash_pct
+    alloc_total = equity_pct + precious_metals_pct + cash_pct
     debt_pct_display = 100.0 - alloc_total
 
     with col_a4:
@@ -255,7 +255,7 @@ with st.form("fire_settings"):
 
     if alloc_total > 100.0:
         st.error(
-            f"Equity + Gold + Cash = {alloc_total:.0f}% exceeds 100%. "
+            f"Equity + Precious Metals + Cash = {alloc_total:.0f}% exceeds 100%. "
             "Please reduce allocations."
         )
 
@@ -276,11 +276,11 @@ if submitted:
         "swr": swr / 100.0,
         "equity_return": equity_return / 100.0,
         "debt_return": debt_return / 100.0,
-        "gold_return": gold_return / 100.0,
+        "precious_metals_return": precious_metals_return / 100.0,
         "cash_return": cash_return / 100.0,
         "inflation": inflation / 100.0,
         "equity_pct": equity_pct / 100.0,
-        "gold_pct": gold_pct / 100.0,
+        "precious_metals_pct": precious_metals_pct / 100.0,
         "cash_pct": cash_pct / 100.0,
     }
 

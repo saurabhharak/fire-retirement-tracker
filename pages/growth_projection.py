@@ -52,7 +52,7 @@ for row in projection:
         "Portfolio Value (\u20b9)": format_indian(row["portfolio"]),
         "Total Gains (\u20b9)": format_indian(row["gains"]),
         "Equity Value (\u20b9)": format_indian(row["equity_value"]),
-        "Debt+Gold+Cash (\u20b9)": format_indian(row["debt_gold_cash"]),
+        "Debt+Metals+Cash (\u20b9)": format_indian(row["debt_gold_cash"]),
     })
 
 df = pd.DataFrame(table_rows)
@@ -77,7 +77,7 @@ fig = go.Figure()
 fig.add_trace(go.Scatter(
     x=ages,
     y=debt_gold_cash_values,
-    name="Debt + Gold + Cash",
+    name="Debt + Metals + Cash",
     mode="lines",
     stackgroup="one",
     line=dict(color="#636EFA"),

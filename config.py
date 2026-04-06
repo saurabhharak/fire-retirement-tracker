@@ -48,6 +48,6 @@ FUNDS = [
     ("ICICI Prudential Short Term Fund",              "debt",   "debt_pct",   40,  "Your"),
     ("Invesco India Arbitrage Fund",                  "debt",   "debt_pct",   30,  "Your"),
     ("ICICI Prudential Liquid Fund",                  "debt",   "debt_pct",   30,  "Your"),
-    ("Gold ETF",                                      "gold",   "gold_pct",   100, "Zerodha"),
+    ("Precious Metals",                                "gold",   "precious_metals_pct", 100, "Zerodha"),
     ("Emergency / Cash Reserve",                      "cash",   "cash_pct",   100, "Liquid Fund"),
 ]
