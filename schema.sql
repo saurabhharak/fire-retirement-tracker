@@ -140,6 +140,51 @@ CREATE TABLE public.audit_log (
 CREATE INDEX idx_audit_log_user_id ON public.audit_log(user_id);
 CREATE INDEX idx_audit_log_created_at ON public.audit_log(created_at);
 
+-- ---------------------------------------------------------------------------
+-- 7. projects
+-- ---------------------------------------------------------------------------
+CREATE TABLE public.projects (
+    id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    name        text        NOT NULL CHECK (char_length(name) <= 100),
+    status      text        NOT NULL CHECK (status IN ('active', 'completed')) DEFAULT 'active',
+    budget      numeric     CHECK (budget IS NULL OR budget > 0),
+    start_date  date        NOT NULL,
+    end_date    date        CHECK (end_date IS NULL OR end_date >= start_date),
+    is_active   boolean     NOT NULL DEFAULT true,
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    updated_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_projects_user_status ON public.projects(user_id, status);
+
+CREATE TRIGGER trg_projects_updated_at
+    BEFORE UPDATE ON public.projects
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- ---------------------------------------------------------------------------
+-- 8. project_expenses
+-- ---------------------------------------------------------------------------
+CREATE TABLE public.project_expenses (
+    id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id   uuid        NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+    date         date        NOT NULL,
+    category     text        NOT NULL CHECK (char_length(category) <= 50),
+    description  text        NOT NULL CHECK (char_length(description) <= 200),
+    total_amount numeric     CHECK (total_amount IS NULL OR total_amount >= 0),
+    paid_amount  numeric     NOT NULL CHECK (paid_amount >= 0),
+    paid_by      text        NOT NULL CHECK (char_length(paid_by) <= 100),
+    is_active    boolean     NOT NULL DEFAULT true,
+    created_at   timestamptz NOT NULL DEFAULT now(),
+    updated_at   timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_project_expenses_project_id ON public.project_expenses(project_id);
+
+CREATE TRIGGER trg_project_expenses_updated_at
+    BEFORE UPDATE ON public.project_expenses
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
 -- ===========================================================================
 -- Row Level Security (RLS)
 -- ===========================================================================
@@ -254,3 +299,49 @@ CREATE POLICY "insert_own" ON public.audit_log
 
 CREATE POLICY "select_own" ON public.audit_log
     FOR SELECT USING (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
+-- projects — per-operation policies
+-- ---------------------------------------------------------------------------
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "select_own" ON public.projects
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "insert_own" ON public.projects
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "update_own" ON public.projects
+    FOR UPDATE USING (auth.uid() = user_id)
+              WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "delete_own" ON public.projects
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
+-- project_expenses — policies via join to projects
+-- ---------------------------------------------------------------------------
+ALTER TABLE public.project_expenses ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "select_own" ON public.project_expenses
+    FOR SELECT USING (
+        project_id IN (SELECT id FROM public.projects WHERE user_id = auth.uid())
+    );
+
+CREATE POLICY "insert_own" ON public.project_expenses
+    FOR INSERT WITH CHECK (
+        project_id IN (SELECT id FROM public.projects WHERE user_id = auth.uid())
+    );
+
+CREATE POLICY "update_own" ON public.project_expenses
+    FOR UPDATE USING (
+        project_id IN (SELECT id FROM public.projects WHERE user_id = auth.uid())
+    )
+    WITH CHECK (
+        project_id IN (SELECT id FROM public.projects WHERE user_id = auth.uid())
+    );
+
+CREATE POLICY "delete_own" ON public.project_expenses
+    FOR DELETE USING (
+        project_id IN (SELECT id FROM public.projects WHERE user_id = auth.uid())
+    );
