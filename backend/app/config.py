@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = ""  # Optional: only needed for legacy HS256 verification
     environment: str = "production"
     log_level: str = "INFO"
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000"]
 
     # Gold rate API keys (optional -- graceful degradation if missing)
     gold_api_key: str = ""           # Metals.dev API key  (env: GOLD_API_KEY)

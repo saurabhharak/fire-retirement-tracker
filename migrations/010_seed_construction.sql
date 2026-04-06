@@ -1,12 +1,12 @@
 -- Migration 010: Seed house construction expenses
--- IMPORTANT: Replace 'REPLACE_WITH_YOUR_USER_ID' with your actual Supabase user UUID
+-- IMPORTANT: Replace '544d7acc-476f-4f91-aefd-10124d52eb3b' with your actual Supabase user UUID
 -- Find it at: Supabase Dashboard > Authentication > Users
 
 BEGIN;
 
 DO $$
 DECLARE
-    v_user_id uuid := 'REPLACE_WITH_YOUR_USER_ID';
+    v_user_id uuid := '544d7acc-476f-4f91-aefd-10124d52eb3b';
     v_project_id uuid;
 BEGIN
     -- Skip if project already exists
