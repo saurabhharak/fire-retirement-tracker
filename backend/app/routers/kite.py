@@ -30,7 +30,7 @@ async def get_login_url(
 async def kite_callback(
     request: Request,
     request_token: str = Query(...),
-    state: str = Query(...),
+    state: str = Query(""),
 ) -> RedirectResponse:
     """OAuth callback from Zerodha. No Supabase auth — validates state JWT."""
     settings = get_settings()

@@ -65,30 +65,55 @@ def exchange_token(request_token: str, state: str) -> str:
 
     Returns the user_id from the state JWT.
     Uses service-role client (no Supabase JWT available on callback).
+
+    If state is empty (Kite personal apps may not forward it), falls back
+    to finding the most recent unexpired nonce to identify the user.
     """
     settings = get_settings()
-
-    # Validate state JWT
-    try:
-        payload = jwt.decode(
-            state,
-            settings.kite_state_secret,
-            algorithms=["HS256"],
-            audience="kite-oauth-state",
-            issuer="fire-tracker",
-        )
-    except jwt.ExpiredSignatureError:
-        raise ExternalServiceError("Authorization expired. Please try again.")
-    except jwt.InvalidTokenError:
-        raise ExternalServiceError("Invalid authorization state.")
-
-    user_id = payload.get("user_id")
-    nonce = payload.get("nonce")
-    if not user_id or not nonce:
-        raise ExternalServiceError("Invalid authorization state.")
-
-    # Verify nonce is unused (one-time use)
     client = get_service_client()
+
+    if state:
+        # Validate state JWT
+        try:
+            payload = jwt.decode(
+                state,
+                settings.kite_state_secret,
+                algorithms=["HS256"],
+                audience="kite-oauth-state",
+                issuer="fire-tracker",
+            )
+        except jwt.ExpiredSignatureError:
+            raise ExternalServiceError("Authorization expired. Please try again.")
+        except jwt.InvalidTokenError:
+            raise ExternalServiceError("Invalid authorization state.")
+
+        user_id = payload.get("user_id")
+        nonce = payload.get("nonce")
+        if not user_id or not nonce:
+            raise ExternalServiceError("Invalid authorization state.")
+    else:
+        # Fallback: Kite personal apps may not forward state param.
+        # Find the most recent unexpired nonce to identify the user.
+        try:
+            nonce_result = (
+                client.table("kite_oauth_nonces")
+                .select("nonce, user_id")
+                .gt("expires_at", datetime.now(timezone.utc).isoformat())
+                .order("created_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            if not nonce_result.data:
+                raise ExternalServiceError("No pending authorization found. Please try again.")
+            user_id = nonce_result.data[0]["user_id"]
+            nonce = nonce_result.data[0]["nonce"]
+        except ExternalServiceError:
+            raise
+        except Exception as e:
+            logger.error("Nonce lookup failed: %s", type(e).__name__)
+            raise ExternalServiceError("Authorization failed. Please try again.")
+
+    # Verify nonce is unused (one-time use) and consume it
     try:
         nonce_result = (
             client.table("kite_oauth_nonces")
