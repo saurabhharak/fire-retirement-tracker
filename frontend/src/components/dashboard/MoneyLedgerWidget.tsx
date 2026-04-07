@@ -42,7 +42,7 @@ export function MoneyLedgerWidget() {
             <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30">
               <p className="text-sm text-[#E8ECF1]/60 mb-1">Net Balance</p>
               <p
-                className={`text-2xl font-bold ${data.net_balance >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`}
+                className={`text-lg sm:text-2xl font-bold break-all ${data.net_balance >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`}
                 style={{ fontVariantNumeric: "tabular-nums" }}
               >
                 {formatRupees(Math.round(Math.abs(data.net_balance)))}

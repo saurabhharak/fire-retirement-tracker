@@ -37,7 +37,7 @@ export function MFPortfolioWidget() {
       {isConnected && portfolio ? (
         <>
           {/* Row 1: Invested / Current / P&L */}
-          <div className="grid grid-cols-3 gap-3 mb-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
             <MetricCard label="Invested" value={Math.round(portfolio.total_invested)} />
             <MetricCard
               label="Current Value"
@@ -47,7 +47,7 @@ export function MFPortfolioWidget() {
             <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30">
               <p className="text-sm text-[#E8ECF1]/60 mb-1">P&amp;L</p>
               <p
-                className={`text-2xl font-bold ${portfolio.total_pnl >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`}
+                className={`text-lg sm:text-2xl font-bold break-all ${portfolio.total_pnl >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`}
                 style={{ fontVariantNumeric: "tabular-nums" }}
               >
                 {portfolio.total_pnl >= 0 ? "+" : ""}
