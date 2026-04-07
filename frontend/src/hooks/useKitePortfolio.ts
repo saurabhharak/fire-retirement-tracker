@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
@@ -57,6 +58,7 @@ export function useKitePortfolio() {
     queryKey: ["kite-status"],
     queryFn: () =>
       api.get<{ data: KiteStatus }>("/api/kite/status").then((r) => r.data),
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   const portfolio = useQuery({
@@ -64,12 +66,17 @@ export function useKitePortfolio() {
     queryFn: () =>
       api.get<{ data: KitePortfolio }>("/api/kite/portfolio").then((r) => r.data),
     enabled: !!status.data?.connected && !status.data?.is_expired,
+    staleTime: 5 * 60 * 1000, // 5 minutes (NAV updates daily)
   });
 
-  const connect = async () => {
-    const res = await api.get<{ data: { url: string } }>("/api/kite/login-url");
-    window.location.href = res.data.url;
-  };
+  const connect = useCallback(async () => {
+    try {
+      const res = await api.get<{ data: { url: string } }>("/api/kite/login-url");
+      window.location.href = res.data.url;
+    } catch {
+      // Handled by React Query error boundary or caller
+    }
+  }, []);
 
   const disconnect = useMutation({
     mutationFn: () => api.delete("/api/kite/session"),
@@ -79,6 +86,10 @@ export function useKitePortfolio() {
     },
   });
 
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["kite-portfolio"] });
+  }, [queryClient]);
+
   return {
     status: status.data,
     statusLoading: status.isLoading,
@@ -86,8 +97,6 @@ export function useKitePortfolio() {
     portfolioLoading: portfolio.isLoading,
     connect,
     disconnect: disconnect.mutateAsync,
-    refresh: () => {
-      queryClient.invalidateQueries({ queryKey: ["kite-portfolio"] });
-    },
+    refresh,
   };
 }

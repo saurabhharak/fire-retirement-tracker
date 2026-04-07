@@ -23,7 +23,7 @@ export function KiteConnectionBanner({ status, isLoading, onConnect, onDisconnec
         <p className="text-[#E8ECF1]/60 text-sm">Connect your Zerodha account to view live MF portfolio</p>
         <button
           onClick={onConnect}
-          className="flex items-center gap-2 bg-[#00895E] hover:bg-[#00895E]/80 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+          className="flex items-center gap-2 bg-[#00895E] hover:bg-[#00895E]/80 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[#00895E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D1B2A]"
         >
           <Link size={16} />
           Connect Zerodha
@@ -56,7 +56,7 @@ export function KiteConnectionBanner({ status, isLoading, onConnect, onDisconnec
         {status.is_expired ? (
           <button
             onClick={onConnect}
-            className="flex items-center gap-1 bg-[#D4A843] hover:bg-[#D4A843]/80 text-[#0D1B2A] rounded px-3 py-1.5 text-sm font-medium transition-colors"
+            className="flex items-center gap-1 bg-[#D4A843] hover:bg-[#D4A843]/80 text-[#0D1B2A] rounded px-3 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[#D4A843] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D1B2A]"
           >
             Reconnect
           </button>
