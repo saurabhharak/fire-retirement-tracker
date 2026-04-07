@@ -216,7 +216,7 @@ Run: `cd backend && pip install kiteconnect`
 Append to `backend/.env`:
 
 ```
-KITE_API_KEY=lbljrdla3du1kcgz
+KITE_API_KEY=your_kite_api_key_here
 KITE_API_SECRET=your_api_secret_here
 KITE_STATE_SECRET=generate_a_random_32_char_string
 KITE_REDIRECT_URL=http://localhost:8002/api/kite/callback
@@ -341,6 +341,7 @@ import jwt
 from kiteconnect import KiteConnect
 
 from app.config import get_settings
+from app.core.models import KiteHolding, KiteSIP
 from app.exceptions import DatabaseError, DataNotFoundError, ExternalServiceError
 from app.services.supabase_client import get_service_client, get_user_client
 
@@ -596,9 +597,13 @@ def fetch_portfolio(user_id: str, access_token: str) -> dict:
     overall_pnl_pct = round((total_pnl / total_invested) * 100, 2) if total_invested > 0 else 0.0
     synced_at = datetime.now(timezone.utc).isoformat()
 
+    # Validate through Pydantic models before saving to JSONB
+    validated_holdings = [KiteHolding(**h).model_dump() for h in holdings]
+    validated_sips = [KiteSIP(**s).model_dump() for s in active_sips]
+
     portfolio = {
-        "holdings": holdings,
-        "sips": active_sips,
+        "holdings": validated_holdings,
+        "sips": validated_sips,
         "total_invested": round(total_invested, 2),
         "current_value": round(total_current, 2),
         "total_pnl": round(total_pnl, 2),
@@ -693,11 +698,14 @@ Create `backend/app/routers/kite.py`:
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import RedirectResponse
 
+from fastapi.responses import JSONResponse
+
 from app.config import get_settings
 from app.dependencies import CurrentUser, get_current_user
 from app.rate_limit import limiter
 from app.services import kite_svc
 from app.services.audit_svc import log_audit
+from app.services.supabase_client import get_service_client
 
 router = APIRouter(tags=["kite"])
 
@@ -717,12 +725,21 @@ async def get_login_url(
 async def kite_callback(
     request: Request,
     request_token: str = Query(...),
-    state: str = Query(""),
+    state: str = Query(...),
 ) -> RedirectResponse:
     """OAuth callback from Zerodha. No Supabase auth — validates state JWT."""
     settings = get_settings()
-    user_id = kite_svc.exchange_token(request_token, state)
-    log_audit(user_id, "kite_connect", {"method": "oauth"})
+    try:
+        user_id = kite_svc.exchange_token(request_token, state)
+    except Exception:
+        return JSONResponse(status_code=400, content={"detail": "Invalid or expired authorization"})
+    # Audit via service-role (no Supabase JWT available on callback)
+    try:
+        get_service_client().table("audit_log").insert(
+            {"user_id": user_id, "action": "kite_connect", "details": {"method": "oauth"}}
+        ).execute()
+    except Exception:
+        pass  # Non-blocking
     return RedirectResponse(
         url=f"{settings.frontend_url}/mf-portfolio?connected=true",
         status_code=302,
