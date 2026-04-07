@@ -247,6 +247,63 @@ class ProjectExpenseCreate(BaseModel):
     paid_by: str = Field(default="Saurabh Harak", max_length=100)
 
 
+# ---------------------------------------------------------------------------
+# Kite Connect MF Portfolio Models
+# ---------------------------------------------------------------------------
+
+class KiteHolding(BaseModel):
+    """Single MF holding from Kite API with computed fields."""
+    fund: str = Field(max_length=500)
+    tradingsymbol: str = Field(max_length=50)
+    quantity: float = Field(ge=0)
+    average_price: float = Field(ge=0)
+    last_price: float = Field(ge=0)
+    last_price_date: str
+    pnl: float
+    invested: float = Field(ge=0)
+    current_value: float = Field(ge=0)
+    pnl_pct: float
+    sip_amount: Optional[float] = None
+    sip_frequency: Optional[str] = None
+    sip_next_date: Optional[str] = None
+
+
+class KiteSIP(BaseModel):
+    """Active SIP from Kite API."""
+    sip_id: str
+    fund: str = Field(max_length=500)
+    tradingsymbol: str = Field(max_length=50)
+    status: Literal["ACTIVE", "PAUSED", "CANCELLED"]
+    frequency: Literal["monthly", "weekly", "quarterly"]
+    instalment_amount: float = Field(ge=0)
+    completed_instalments: int = Field(ge=0)
+    instalment_day: int = Field(ge=0, le=31)
+    next_instalment: Optional[str] = None
+
+
+class KitePortfolioResponse(BaseModel):
+    """Full portfolio response."""
+    holdings: list[KiteHolding]
+    sips: list[KiteSIP]
+    total_invested: float = Field(ge=0)
+    current_value: float = Field(ge=0)
+    total_pnl: float
+    pnl_pct: float
+    total_monthly_sip: float = Field(ge=0)
+    active_sip_count: int = Field(ge=0)
+    synced_at: str
+    is_stale: bool = False
+
+
+class KiteStatusResponse(BaseModel):
+    """Kite connection status."""
+    connected: bool
+    connected_at: Optional[str] = None
+    expires_at: Optional[str] = None
+    is_expired: bool = False
+    last_sync: Optional[str] = None
+
+
 class ProjectExpenseUpdate(BaseModel):
     """Partial update for a project expense."""
     date: Optional[date] = None
