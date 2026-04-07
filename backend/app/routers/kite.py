@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.config import get_settings
 from app.dependencies import CurrentUser, get_current_user
+from app.exceptions import ExternalServiceError
 from app.rate_limit import limiter
 from app.services import kite_svc
 from app.services.audit_svc import log_audit
@@ -35,6 +36,10 @@ async def kite_callback(
     settings = get_settings()
     try:
         user_id = kite_svc.exchange_token(request_token, state)
+    except ExternalServiceError as e:
+        if "Zerodha" in e.message:
+            return JSONResponse(status_code=502, content={"detail": e.message})
+        return JSONResponse(status_code=400, content={"detail": e.message})
     except Exception:
         return JSONResponse(status_code=400, content={"detail": "Invalid or expired authorization"})
     # Audit via service-role (no Supabase JWT available on callback)

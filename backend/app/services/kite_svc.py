@@ -34,7 +34,7 @@ def generate_login_url(user_id: str) -> str:
         }).execute()
     except Exception as e:
         logger.error("Could not store OAuth nonce for user %s: %s", user_id, type(e).__name__)
-        raise DatabaseError("Could not initiate Kite login") from e
+        raise ExternalServiceError("Could not initiate Kite login") from e
 
     # Sign state JWT with dedicated secret
     state = jwt.encode(
@@ -105,7 +105,7 @@ def exchange_token(request_token: str, state: str) -> str:
         raise
     except Exception as e:
         logger.error("Nonce verification failed for user %s: %s", user_id, type(e).__name__)
-        raise DatabaseError("Authorization verification failed.") from e
+        raise ExternalServiceError("Authorization verification failed.") from e
 
     # Exchange request_token for access_token via Kite API
     try:
@@ -134,7 +134,7 @@ def exchange_token(request_token: str, state: str) -> str:
         }).execute()
     except Exception as e:
         logger.error("Could not store Kite session for user %s: %s", user_id, type(e).__name__)
-        raise DatabaseError("Could not save Kite connection.") from e
+        raise ExternalServiceError("Could not save Kite connection.") from e
 
     return user_id
 
@@ -162,7 +162,7 @@ def delete_session(user_id: str, access_token: str) -> None:
         client.table("kite_sessions").delete().eq("user_id", user_id).execute()
     except Exception as e:
         logger.error("Could not delete Kite session for user %s: %s", user_id, type(e).__name__)
-        raise DatabaseError("Could not disconnect Kite.") from e
+        raise ExternalServiceError("Could not disconnect Kite.") from e
 
 
 def fetch_portfolio(user_id: str, access_token: str) -> dict:
