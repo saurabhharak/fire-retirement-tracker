@@ -312,3 +312,40 @@ class ProjectExpenseUpdate(BaseModel):
     total_amount: Optional[float] = Field(None, ge=0)
     paid_amount: Optional[float] = Field(None, ge=0)
     paid_by: Optional[str] = Field(None, max_length=100)
+
+
+# ---------------------------------------------------------------------------
+# Money Ledger Models (personal debt tracker)
+# ---------------------------------------------------------------------------
+
+class LedgerContactCreate(BaseModel):
+    """Create a new ledger contact."""
+    name: str = Field(max_length=100)
+    phone: Optional[str] = Field(None, max_length=15)
+
+
+class LedgerContactUpdate(BaseModel):
+    """Partial update for a ledger contact."""
+    name: Optional[str] = Field(None, max_length=100)
+    phone: Optional[str] = Field(None, max_length=15)
+
+
+class LedgerTxnCreate(BaseModel):
+    """Create a new ledger transaction."""
+    contact_id: str
+    direction: Literal["gave", "received"]
+    amount: float = Field(gt=0)
+    date: date
+    category: Literal["loan", "borrowed", "payment", "advance", "other"]
+    payment_method: Literal["cash", "upi", "bank_transfer", "other"]
+    note: Optional[str] = Field(None, max_length=200)
+
+
+class LedgerTxnUpdate(BaseModel):
+    """Partial update for a ledger transaction."""
+    direction: Optional[Literal["gave", "received"]] = None
+    amount: Optional[float] = Field(None, gt=0)
+    date: Optional[date] = None
+    category: Optional[Literal["loan", "borrowed", "payment", "advance", "other"]] = None
+    payment_method: Optional[Literal["cash", "upi", "bank_transfer", "other"]] = None
+    note: Optional[str] = Field(None, max_length=200)
