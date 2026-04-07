@@ -41,7 +41,7 @@ def load_contacts(
             txns = txn_resp.data or []
             total_gave = sum(float(t["amount"]) for t in txns if t["direction"] == "gave")
             total_received = sum(float(t["amount"]) for t in txns if t["direction"] == "received")
-            balance = total_received - total_gave
+            balance = total_gave - total_received
             contact["total_gave"] = round(total_gave, 2)
             contact["total_received"] = round(total_received, 2)
             contact["balance"] = round(balance, 2)
@@ -123,7 +123,7 @@ def compute_summary(user_id: str, access_token: str) -> dict:
             total_gave = sum(float(t["amount"]) for t in txns if t["direction"] == "gave")
             total_received = sum(float(t["amount"]) for t in txns if t["direction"] == "received")
 
-        net_balance = total_received - total_gave
+        net_balance = total_gave - total_received
         return {
             "total_gave": round(total_gave, 2),
             "total_received": round(total_received, 2),
