@@ -244,6 +244,14 @@ def fetch_portfolio(user_id: str, access_token: str) -> dict:
             "next_instalment": sip.get("next_instalment"),
         })
 
+    # Build fund name lookup from SIP data (SIPs always have fund names)
+    fund_name_lookup: dict[str, str] = {}
+    for sip in raw_sips:
+        ts = sip.get("tradingsymbol", "")
+        name = sip.get("fund", "")
+        if ts and name:
+            fund_name_lookup[ts] = name
+
     # Process holdings + merge SIP data
     holdings = []
     total_invested = 0.0
@@ -267,8 +275,11 @@ def fetch_portfolio(user_id: str, access_token: str) -> dict:
         ts = h.get("tradingsymbol", "")
         sip = sip_lookup.get(ts)
 
+        # Resolve fund name: holdings > SIP data > tradingsymbol
+        fund_name = h.get("fund", "") or fund_name_lookup.get(ts, "") or ts
+
         holdings.append({
-            "fund": h.get("fund", ""),
+            "fund": fund_name,
             "tradingsymbol": ts,
             "quantity": qty,
             "average_price": avg,
