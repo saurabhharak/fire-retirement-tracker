@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useSipLog } from "../../hooks/useSipLog";
-import { MetricCard } from "../MetricCard";
 import { formatRupees } from "../../lib/formatIndian";
 import { MONTH_NAMES } from "../../lib/constants";
 
