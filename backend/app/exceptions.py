@@ -26,6 +26,11 @@ class AuthenticationError(FireTrackerError):
     pass
 
 
+class ExternalServiceError(FireTrackerError):
+    """Raised when an external API (e.g., Kite Connect) fails."""
+    pass
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Register custom exception handlers on the FastAPI app."""
 
@@ -40,3 +45,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AuthenticationError)
     async def auth_error_handler(request: Request, exc: AuthenticationError):
         return JSONResponse(status_code=401, content={"detail": exc.message})
+
+    @app.exception_handler(ExternalServiceError)
+    async def external_service_handler(request: Request, exc: ExternalServiceError):
+        return JSONResponse(status_code=502, content={"detail": exc.message})

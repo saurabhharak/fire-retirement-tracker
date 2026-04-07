@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     gold_api_key: str = ""           # Metals.dev API key  (env: GOLD_API_KEY)
     gold_api_key_fallback: str = ""  # GoldAPI.io fallback (env: GOLD_API_KEY_FALLBACK)
 
+    # Kite Connect (MF portfolio tracking)
+    kite_api_key: str = ""
+    kite_api_secret: str = ""
+    kite_state_secret: str = ""          # Dedicated key for signing OAuth state JWTs
+    kite_redirect_url: str = "http://localhost:8002/api/kite/callback"
+    frontend_url: str = "http://localhost:5175"
+    supabase_service_key: str = ""       # Service-role key for OAuth callback bypass
+
     @field_validator("cors_origins")
     @classmethod
     def no_wildcard_with_credentials(cls, v):

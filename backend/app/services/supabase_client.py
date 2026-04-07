@@ -23,3 +23,13 @@ def get_user_client(access_token: str) -> Client:
     client = create_client(settings.supabase_url, settings.supabase_key)
     client.auth.set_session(access_token, "")
     return client
+
+
+@lru_cache
+def get_service_client() -> Client:
+    """Service-role client for operations that bypass RLS (e.g., OAuth callback).
+
+    Use sparingly — only when no Supabase JWT is available (browser redirects).
+    """
+    settings = get_settings()
+    return create_client(settings.supabase_url, settings.supabase_service_key)
