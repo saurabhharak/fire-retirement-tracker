@@ -258,12 +258,6 @@ def fetch_portfolio(user_id: str, access_token: str) -> dict:
     total_current = 0.0
     total_pnl = 0.0
 
-    # Log raw holdings for debugging (temporary)
-    for i, rh in enumerate(raw_holdings):
-        logger.info("Raw holding %d: fund=%s, last_price=%s, pnl=%s, quantity=%s, avg=%s, keys=%s",
-                     i, rh.get("fund", ""), rh.get("last_price"), rh.get("pnl"),
-                     rh.get("quantity"), rh.get("average_price"), list(rh.keys()))
-
     for h in raw_holdings:
         qty = float(h.get("quantity", 0))
         avg = float(h.get("average_price", 0))

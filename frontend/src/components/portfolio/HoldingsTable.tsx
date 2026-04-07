@@ -29,12 +29,14 @@ export function HoldingsTable({ holdings }: Props) {
                 </div>
               </td>
               <td className="px-3 py-2 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{`\u20B9${formatIndian(h.invested)}`}</td>
-              <td className="px-3 py-2 text-right font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>{`\u20B9${formatIndian(h.current_value)}`}</td>
+              <td className="px-3 py-2 text-right font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>
+                {h.last_price > 0 ? `\u20B9${formatIndian(h.current_value)}` : <span className="text-[#E8ECF1]/30 text-xs">Awaiting NAV</span>}
+              </td>
               <td className={`px-3 py-2 text-right ${h.pnl >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`} style={{ fontVariantNumeric: "tabular-nums" }}>
-                {h.pnl >= 0 ? "+" : ""}{`\u20B9${formatIndian(Math.abs(h.pnl))}`}
+                {h.last_price > 0 ? <>{h.pnl >= 0 ? "+" : ""}{`\u20B9${formatIndian(Math.abs(h.pnl))}`}</> : <span className="text-[#E8ECF1]/30">—</span>}
               </td>
               <td className={`px-3 py-2 text-right ${h.pnl_pct >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`} style={{ fontVariantNumeric: "tabular-nums" }}>
-                {h.pnl_pct >= 0 ? "+" : ""}{h.pnl_pct.toFixed(1)}%
+                {h.last_price > 0 ? <>{h.pnl_pct >= 0 ? "+" : ""}{h.pnl_pct.toFixed(1)}%</> : <span className="text-[#E8ECF1]/30">—</span>}
               </td>
               <td className="px-3 py-2 text-right text-[#E8ECF1]/60" style={{ fontVariantNumeric: "tabular-nums" }}>
                 {h.sip_amount ? `\u20B9${formatIndian(h.sip_amount)}` : "\u2014"}
