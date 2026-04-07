@@ -35,6 +35,7 @@ export const NAV_ITEMS = [
   { path: "/income-expenses", label: "Income & Expenses", icon: "Coins" },
   { path: "/precious-metals", label: "Precious Metals", icon: "Gem" },
   { path: "/projects", label: "Projects", icon: "Hammer" },
+  { path: "/money-ledger", label: "Money Ledger", icon: "Wallet" },
   { path: "/fire-settings", label: "FIRE Settings", icon: "Settings" },
   { path: "/fund-allocation", label: "Fund Allocation", icon: "Briefcase" },
   { path: "/growth-projection", label: "Growth Projection", icon: "TrendingUp" },

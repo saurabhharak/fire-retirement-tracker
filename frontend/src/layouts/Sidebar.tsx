@@ -13,6 +13,7 @@ import {
   X,
   Hammer,
   LineChart,
+  Wallet,
 } from "lucide-react";
 import { NAV_ITEMS } from "../lib/constants";
 import { useAuth } from "../contexts/AuthContext";
@@ -29,6 +30,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
   Lock,
   Hammer,
   LineChart,
+  Wallet,
 };
 
 interface SidebarProps {

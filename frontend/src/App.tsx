@@ -18,6 +18,7 @@ const SipTracker = lazy(() => import("./pages/SipTracker"));
 const PreciousMetals = lazy(() => import("./pages/PreciousMetals"));
 const SettingsPrivacy = lazy(() => import("./pages/SettingsPrivacy"));
 const Projects = lazy(() => import("./pages/Projects"));
+const MoneyLedger = lazy(() => import("./pages/MoneyLedger"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -133,6 +134,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Projects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/money-ledger"
+              element={
+                <ProtectedRoute>
+                  <MoneyLedger />
                 </ProtectedRoute>
               }
             />
