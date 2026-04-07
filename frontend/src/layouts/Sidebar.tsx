@@ -12,6 +12,7 @@ import {
   LogOut,
   X,
   Hammer,
+  LineChart,
 } from "lucide-react";
 import { NAV_ITEMS } from "../lib/constants";
 import { useAuth } from "../contexts/AuthContext";
@@ -27,6 +28,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
   ClipboardList,
   Lock,
   Hammer,
+  LineChart,
 };
 
 interface SidebarProps {

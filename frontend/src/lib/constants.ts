@@ -39,6 +39,7 @@ export const NAV_ITEMS = [
   { path: "/fund-allocation", label: "Fund Allocation", icon: "Briefcase" },
   { path: "/growth-projection", label: "Growth Projection", icon: "TrendingUp" },
   { path: "/retirement-analysis", label: "Retirement Analysis", icon: "Shield" },
+  { path: "/mf-portfolio", label: "MF Portfolio", icon: "LineChart" },
   { path: "/sip-tracker", label: "SIP Tracker", icon: "ClipboardList" },
   { path: "/settings-privacy", label: "Settings & Privacy", icon: "Lock" },
 ] as const;

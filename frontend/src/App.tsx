@@ -13,6 +13,7 @@ const FireSettings = lazy(() => import("./pages/FireSettings"));
 const FundAllocation = lazy(() => import("./pages/FundAllocation"));
 const GrowthProjection = lazy(() => import("./pages/GrowthProjection"));
 const RetirementAnalysis = lazy(() => import("./pages/RetirementAnalysis"));
+const MFPortfolio = lazy(() => import("./pages/MFPortfolio"));
 const SipTracker = lazy(() => import("./pages/SipTracker"));
 const PreciousMetals = lazy(() => import("./pages/PreciousMetals"));
 const SettingsPrivacy = lazy(() => import("./pages/SettingsPrivacy"));
@@ -92,6 +93,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <RetirementAnalysis />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mf-portfolio"
+              element={
+                <ProtectedRoute>
+                  <MFPortfolio />
                 </ProtectedRoute>
               }
             />
