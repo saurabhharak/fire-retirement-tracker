@@ -20,7 +20,13 @@ import { useIncome } from "../hooks/useIncome";
 import { useExpenses } from "../hooks/useExpenses";
 import { useMetalsSummary } from "../hooks/useMetalsSummary";
 import { useSipTotal } from "../hooks/useSipTotal";
+import { useKitePortfolio } from "../hooks/useKitePortfolio";
+import { useLedgerContacts, useLedgerSummary } from "../hooks/useLedgerContacts";
+import { useSipLog } from "../hooks/useSipLog";
 import { MetricCard } from "../components/MetricCard";
+import { MFPortfolioWidget } from "../components/dashboard/MFPortfolioWidget";
+import { MoneyLedgerWidget } from "../components/dashboard/MoneyLedgerWidget";
+import { SipDisciplineWidget } from "../components/dashboard/SipDisciplineWidget";
 import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
 import { EmptyState } from "../components/EmptyState";
@@ -37,6 +43,11 @@ export default function Dashboard() {
   const expenses = useExpenses({ active: true });
   const metalsSummary = useMetalsSummary();
   const sipTotal = useSipTotal();
+  // Widget hooks (pre-fetched so widgets render without extra waterfall)
+  useKitePortfolio();
+  useLedgerContacts();
+  useLedgerSummary();
+  useSipLog(6);
 
   // Loading state
   if (fireInputs.isLoading) {
@@ -229,6 +240,13 @@ export default function Dashboard() {
             />
           </div>
         </div>
+      </section>
+
+      {/* Dashboard Widgets: MF Portfolio, Money Ledger, SIP Discipline */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <MFPortfolioWidget />
+        <MoneyLedgerWidget />
+        <SipDisciplineWidget />
       </section>
 
       {/* Outflow Breakdown + Asset Allocation */}
