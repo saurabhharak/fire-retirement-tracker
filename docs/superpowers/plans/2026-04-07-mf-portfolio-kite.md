@@ -1019,15 +1019,16 @@ export function KiteConnectionBanner({ status, isLoading, onConnect, onDisconnec
         ) : (
           <button
             onClick={onRefresh}
-            className="flex items-center gap-1 text-[#E8ECF1]/60 hover:text-[#E8ECF1] transition-colors p-1.5 rounded hover:bg-[#1A3A5C]/30"
+            aria-label="Refresh portfolio"
+            className="flex items-center gap-1 text-[#E8ECF1]/60 hover:text-[#E8ECF1] transition-colors p-1.5 rounded hover:bg-[#1A3A5C]/30 focus-visible:ring-2 focus-visible:ring-[#00895E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D1B2A]"
           >
             <RefreshCw size={16} />
           </button>
         )}
         <button
           onClick={() => onDisconnect()}
-          className="flex items-center gap-1 text-[#E8ECF1]/40 hover:text-[#E5A100] transition-colors p-1.5 rounded hover:bg-[#1A3A5C]/30"
-          title="Disconnect Zerodha"
+          aria-label="Disconnect Zerodha"
+          className="flex items-center gap-1 text-[#E8ECF1]/40 hover:text-[#E5A100] transition-colors p-1.5 rounded hover:bg-[#1A3A5C]/30 focus-visible:ring-2 focus-visible:ring-[#00895E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D1B2A]"
         >
           <LogOut size={16} />
         </button>
@@ -1072,10 +1073,10 @@ export function PortfolioSummaryCards({ portfolio, isLoading }: Props) {
       <MetricCard label="Monthly SIP" value={portfolio.total_monthly_sip} color="default" />
       <MetricCard label="Active SIPs" value={portfolio.active_sip_count} prefix="" color="default" />
       <MetricCard
-        label="NAV Date"
-        value={0}
+        label="Holdings Count"
+        value={portfolio.holdings.length}
         prefix=""
-        suffix={portfolio.holdings[0]?.last_price_date || "N/A"}
+        suffix={` funds (NAV: ${portfolio.holdings[0]?.last_price_date || "N/A"})`}
         color="default"
       />
     </div>
@@ -1116,15 +1117,15 @@ export function HoldingsTable({ holdings }: Props) {
                   <p className="text-xs text-[#E8ECF1]/40">{h.quantity.toFixed(3)} units</p>
                 </div>
               </td>
-              <td className="px-3 py-2 text-right">{`\u20B9${formatIndian(h.invested)}`}</td>
-              <td className="px-3 py-2 text-right font-medium">{`\u20B9${formatIndian(h.current_value)}`}</td>
-              <td className={`px-3 py-2 text-right ${h.pnl >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`}>
+              <td className="px-3 py-2 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{`\u20B9${formatIndian(h.invested)}`}</td>
+              <td className="px-3 py-2 text-right font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>{`\u20B9${formatIndian(h.current_value)}`}</td>
+              <td className={`px-3 py-2 text-right ${h.pnl >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`} style={{ fontVariantNumeric: "tabular-nums" }}>
                 {h.pnl >= 0 ? "+" : ""}{`\u20B9${formatIndian(Math.abs(h.pnl))}`}
               </td>
-              <td className={`px-3 py-2 text-right ${h.pnl_pct >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`}>
+              <td className={`px-3 py-2 text-right ${h.pnl_pct >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`} style={{ fontVariantNumeric: "tabular-nums" }}>
                 {h.pnl_pct >= 0 ? "+" : ""}{h.pnl_pct.toFixed(1)}%
               </td>
-              <td className="px-3 py-2 text-right text-[#E8ECF1]/60">
+              <td className="px-3 py-2 text-right text-[#E8ECF1]/60" style={{ fontVariantNumeric: "tabular-nums" }}>
                 {h.sip_amount ? `\u20B9${formatIndian(h.sip_amount)}` : "\u2014"}
               </td>
             </tr>
@@ -1161,14 +1162,16 @@ export function ActiveSIPs({ sips }: Props) {
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 text-sm text-[#E8ECF1]/60 hover:text-[#E8ECF1] transition-colors mb-3"
+        aria-expanded={open}
+        aria-controls="active-sips-panel"
+        className="flex items-center gap-2 text-sm text-[#E8ECF1]/60 hover:text-[#E8ECF1] transition-colors mb-3 focus-visible:ring-2 focus-visible:ring-[#00895E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D1B2A] rounded"
       >
         {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         {open ? "Hide" : "Show"} Active SIPs ({activeSips.length})
       </button>
 
       {open && (
-        <div className="overflow-x-auto rounded-xl border border-[#1A3A5C]/30">
+        <div id="active-sips-panel" className="overflow-x-auto rounded-xl border border-[#1A3A5C]/30">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[#132E3D] text-[#E8ECF1]/60 text-left">
@@ -1183,7 +1186,7 @@ export function ActiveSIPs({ sips }: Props) {
               {activeSips.map((s) => (
                 <tr key={s.sip_id} className="border-t border-[#1A3A5C]/20 text-[#E8ECF1]">
                   <td className="px-3 py-2 max-w-[250px] truncate">{s.fund}</td>
-                  <td className="px-3 py-2 text-right font-medium">{`\u20B9${formatIndian(s.instalment_amount)}`}</td>
+                  <td className="px-3 py-2 text-right font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>{`\u20B9${formatIndian(s.instalment_amount)}`}</td>
                   <td className="px-3 py-2">
                     <span className="bg-[#1A3A5C]/40 px-2 py-0.5 rounded text-xs capitalize">{s.frequency}</span>
                   </td>
