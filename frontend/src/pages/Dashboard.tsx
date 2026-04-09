@@ -258,7 +258,7 @@ export default function Dashboard() {
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#E8ECF1]/60 mb-4">
                 Monthly Outflow Breakdown
               </h3>
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                 <div className="flex-shrink-0">
                   <PieChart width={130} height={130}>
                     <Pie
@@ -335,7 +335,7 @@ export default function Dashboard() {
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#E8ECF1]/60 mb-4">
                 Asset Allocation
               </h3>
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                 <div className="flex-shrink-0">
                   <PieChart width={130} height={130}>
                     <Pie
