@@ -27,26 +27,26 @@ export function ActiveSIPs({ sips }: Props) {
 
       {open && (
         <div id="active-sips-panel" className="overflow-x-auto rounded-xl border border-[#1A3A5C]/30">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs sm:text-sm">
             <thead>
               <tr className="bg-[#132E3D] text-[#E8ECF1]/60 text-left">
-                <th className="px-3 py-2">Fund</th>
-                <th className="px-3 py-2 text-right">Amount</th>
-                <th className="px-3 py-2">Frequency</th>
-                <th className="px-3 py-2">Next Date</th>
-                <th className="px-3 py-2 text-right">Instalments Done</th>
+                <th className="px-2 sm:px-3 py-2">Fund</th>
+                <th className="px-2 sm:px-3 py-2 text-right">Amount</th>
+                <th className="px-2 sm:px-3 py-2 hidden sm:table-cell">Frequency</th>
+                <th className="px-2 sm:px-3 py-2 whitespace-nowrap">Next Date</th>
+                <th className="px-2 sm:px-3 py-2 text-right hidden sm:table-cell">Done</th>
               </tr>
             </thead>
             <tbody>
               {activeSips.map((s) => (
                 <tr key={s.sip_id} className="border-t border-[#1A3A5C]/20 text-[#E8ECF1]">
-                  <td className="px-3 py-2 max-w-[250px] truncate">{s.fund}</td>
-                  <td className="px-3 py-2 text-right font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>{`\u20B9${formatIndian(s.instalment_amount)}`}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-2 sm:px-3 py-2 max-w-[130px] sm:max-w-[250px] truncate" title={s.fund}>{s.fund}</td>
+                  <td className="px-2 sm:px-3 py-2 text-right font-medium whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums" }}>{`\u20B9${formatIndian(s.instalment_amount)}`}</td>
+                  <td className="px-2 sm:px-3 py-2 hidden sm:table-cell">
                     <span className="bg-[#1A3A5C]/40 px-2 py-0.5 rounded text-xs capitalize">{s.frequency}</span>
                   </td>
-                  <td className="px-3 py-2 text-[#E8ECF1]/60">{s.next_instalment || "\u2014"}</td>
-                  <td className="px-3 py-2 text-right text-[#E8ECF1]/60">{s.completed_instalments}</td>
+                  <td className="px-2 sm:px-3 py-2 text-[#E8ECF1]/60 whitespace-nowrap">{s.next_instalment || "\u2014"}</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-[#E8ECF1]/60 hidden sm:table-cell">{s.completed_instalments}</td>
                 </tr>
               ))}
             </tbody>

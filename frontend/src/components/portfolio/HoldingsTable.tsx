@@ -23,8 +23,8 @@ export function HoldingsTable({ holdings }: Props) {
           {holdings.map((h) => (
             <tr key={h.tradingsymbol} className="border-t border-[#1A3A5C]/20 hover:bg-[#132E3D]/50 text-[#E8ECF1]">
               <td className="px-2 sm:px-3 py-2">
-                <div className="max-w-[150px] sm:max-w-[250px]">
-                  <p className="truncate font-medium text-xs sm:text-sm">{h.fund}</p>
+                <div className="max-w-[120px] sm:max-w-[280px]">
+                  <p className="truncate font-medium text-xs sm:text-sm" title={h.fund}>{h.fund}</p>
                   <p className="text-[10px] sm:text-xs text-[#E8ECF1]/40">{h.quantity.toFixed(3)} units</p>
                 </div>
               </td>
