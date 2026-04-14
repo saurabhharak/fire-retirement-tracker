@@ -33,7 +33,7 @@ export function PortfolioSummaryCards({ portfolio, isLoading }: Props) {
         label="Holdings Count"
         value={portfolio.holdings.length}
         prefix=""
-        suffix={` funds (NAV: ${portfolio.holdings[0]?.last_price_date || "N/A"})`}
+        suffix={` funds`}
         color="default"
       />
     </div>

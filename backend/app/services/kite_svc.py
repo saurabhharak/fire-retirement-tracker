@@ -262,9 +262,10 @@ def fetch_portfolio(user_id: str, access_token: str) -> dict:
         qty = float(h.get("quantity", 0))
         avg = float(h.get("average_price", 0))
         last = float(h.get("last_price", 0))
-        pnl = float(h.get("pnl", 0))
         invested = round(avg * qty, 2)
         current_value = round(last * qty, 2)
+        # Compute P&L ourselves — Kite API often returns pnl=0 even when values differ
+        pnl = round(current_value - invested, 2)
         pnl_pct = round((pnl / invested) * 100, 2) if invested > 0 else 0.0
 
         total_invested += invested
