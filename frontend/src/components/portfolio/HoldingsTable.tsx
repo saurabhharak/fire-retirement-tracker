@@ -33,7 +33,7 @@ export function HoldingsTable({ holdings }: Props) {
                 {h.last_price > 0 ? `\u20B9${formatIndian(h.current_value)}` : <span className="text-[#E8ECF1]/30 text-xs">Awaiting NAV</span>}
               </td>
               <td className={`px-2 sm:px-3 py-2 text-right ${h.pnl >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`} style={{ fontVariantNumeric: "tabular-nums" }}>
-                {h.last_price > 0 ? <>{h.pnl >= 0 ? "+" : ""}{`\u20B9${formatIndian(Math.abs(h.pnl))}`}</> : <span className="text-[#E8ECF1]/30">{"\u2014"}</span>}
+                {h.last_price > 0 ? <>{h.pnl >= 0 ? "+" : "-"}{`\u20B9${formatIndian(Math.abs(h.pnl))}`}</> : <span className="text-[#E8ECF1]/30">{"\u2014"}</span>}
               </td>
               <td className={`px-2 sm:px-3 py-2 text-right hidden sm:table-cell ${h.pnl_pct >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`} style={{ fontVariantNumeric: "tabular-nums" }}>
                 {h.last_price > 0 ? <>{h.pnl_pct >= 0 ? "+" : ""}{h.pnl_pct.toFixed(1)}%</> : <span className="text-[#E8ECF1]/30">{"\u2014"}</span>}

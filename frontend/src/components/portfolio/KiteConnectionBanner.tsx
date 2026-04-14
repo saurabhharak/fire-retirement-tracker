@@ -34,7 +34,7 @@ export function KiteConnectionBanner({ status, isLoading, onConnect, onDisconnec
 
   const syncText = status.last_sync
     ? (() => {
-        const diff = Date.now() - new Date(status.last_sync).getTime();
+        const diff = Math.max(0, Date.now() - new Date(status.last_sync).getTime());
         const mins = Math.floor(diff / 60000);
         if (mins < 1) return "Synced just now";
         if (mins < 60) return `Synced ${mins} min ago`;
