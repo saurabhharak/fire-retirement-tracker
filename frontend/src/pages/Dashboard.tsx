@@ -119,8 +119,8 @@ export default function Dashboard() {
   );
 
   const totalSip = (inputs.your_sip ?? 0) + (inputs.wife_sip ?? 0);
-  const totalOutflow = fixedExpenseTotal + totalSip;
-  const monthlySavings = totalIncome - totalOutflow;
+  // Savings = Income - Expenses (SIPs are investments, NOT expenses)
+  const monthlySavings = totalIncome - fixedExpenseTotal;
 
   // Asset allocation donut data
   const debtPct = 1 - inputs.equity_pct - inputs.precious_metals_pct - inputs.cash_pct;
@@ -218,17 +218,30 @@ export default function Dashboard() {
       </section>
 
       {/* Income Overview */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <MetricCard label={incomeLabel} value={totalIncome} />
-        <MetricCard label="Fixed Expenses" value={Math.round(fixedExpenseTotal)} />
+        <MetricCard label="Fixed Expenses" value={Math.round(fixedExpenseTotal)} color="warning" />
         <MetricCard
-          label="Monthly Savings"
+          label="Savings"
           value={Math.round(Math.max(0, monthlySavings))}
+          color="success"
+        />
+        <MetricCard
+          label="SIP Investment"
+          value={Math.round(totalSip)}
+          color="gold"
+        />
+      </section>
+      <section className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <MetricCard
+          label="Cash Left"
+          value={Math.round(Math.max(0, monthlySavings - totalSip))}
+          prefix={"\u20B9"}
         />
         <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30 border-b-2 border-b-[#00895E]/30">
           <p className="text-sm text-[#E8ECF1]/60 mb-1">Savings Rate</p>
           <p
-            className="text-2xl font-bold text-[#00895E]"
+            className="text-lg sm:text-2xl font-bold text-[#00895E]"
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {savingsRate}%
@@ -237,6 +250,21 @@ export default function Dashboard() {
             <div
               className="h-full bg-gradient-to-r from-[#00895E] to-emerald-400 transition-all duration-500"
               style={{ width: `${Math.min(100, Math.max(0, savingsRate))}%` }}
+            />
+          </div>
+        </div>
+        <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30 border-b-2 border-b-[#D4A843]/30">
+          <p className="text-sm text-[#E8ECF1]/60 mb-1">Investment Rate</p>
+          <p
+            className="text-lg sm:text-2xl font-bold text-[#D4A843]"
+            style={{ fontVariantNumeric: "tabular-nums" }}
+          >
+            {totalIncome > 0 ? Math.round((totalSip / totalIncome) * 1000) / 10 : 0}%
+          </p>
+          <div className="mt-2 w-full h-2 bg-[#0D1B2A] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[#D4A843] to-amber-400 transition-all duration-500"
+              style={{ width: `${Math.min(100, totalIncome > 0 ? Math.round((totalSip / totalIncome) * 100) : 0)}%` }}
             />
           </div>
         </div>

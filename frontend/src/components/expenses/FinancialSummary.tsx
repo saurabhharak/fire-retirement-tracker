@@ -7,7 +7,6 @@ interface FinancialSummaryProps {
   totalIncome: number;
   fixedExpenseMonthly: number;
   totalSip: number;
-  totalOutflow: number;
   savings: number;
   savingsRate: number;
   noIncomeForMonth?: boolean;
@@ -19,7 +18,6 @@ export function FinancialSummary({
   totalIncome,
   fixedExpenseMonthly,
   totalSip,
-  totalOutflow,
   savings,
   savingsRate,
   noIncomeForMonth,
@@ -43,10 +41,10 @@ export function FinancialSummary({
       {/* Expense row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard label="Fixed Expenses" value={Math.round(fixedExpenseMonthly)} />
-        <MetricCard label="Total SIP" value={totalSip} color="success" />
-        <MetricCard label="Total Outflow" value={Math.round(totalOutflow)} color="warning" />
+        <MetricCard label="SIP Investment" value={totalSip} color="gold" />
+        <MetricCard label="Cash Left" value={Math.round(Math.max(0, savings - totalSip))} />
         <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30">
-          <p className="text-sm text-[#E8ECF1]/60 mb-1">Savings</p>
+          <p className="text-sm text-[#E8ECF1]/60 mb-1">Savings (Inc - Exp)</p>
           <p
             className={`text-2xl font-bold ${savings >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`}
             style={{ fontVariantNumeric: "tabular-nums" }}

@@ -92,8 +92,8 @@ export default function IncomeExpenses() {
     return { fixedExpenseMonthly: total, yourExpenses: you, wifeExpenses: wife, householdExpenses: household };
   }, [allMonthExpenses]);
 
-  const totalOutflow = fixedExpenseMonthly + totalSip;
-  const savings = totalIncome - totalOutflow;
+  // Savings = Income - Expenses (SIPs are investments, NOT expenses)
+  const savings = totalIncome - fixedExpenseMonthly;
   const savingsRate =
     totalIncome > 0 ? Math.round((savings / totalIncome) * 1000) / 10 : 0;
 
@@ -105,7 +105,7 @@ export default function IncomeExpenses() {
         { name: "Wife Expenses", value: Math.round(wifeExpenses), color: PIE_COLORS.wife },
         { name: "Household", value: Math.round(householdExpenses), color: PIE_COLORS.household },
         {
-          name: "Savings",
+          name: "Cash Left",
           value: Math.round(Math.max(0, savings - totalSip)),
           color: PIE_COLORS.savings,
         },
@@ -163,7 +163,6 @@ export default function IncomeExpenses() {
         totalIncome={totalIncome}
         fixedExpenseMonthly={Math.round(fixedExpenseMonthly)}
         totalSip={totalSip}
-        totalOutflow={Math.round(totalOutflow)}
         savings={Math.round(savings)}
         savingsRate={savingsRate}
         noIncomeForMonth={noIncomeForMonth}
