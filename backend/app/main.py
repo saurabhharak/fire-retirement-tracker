@@ -64,6 +64,12 @@ async def security_headers(request, call_next):
 register_exception_handlers(app)
 
 
+# Root endpoint (Render health check hits GET /)
+@app.get("/")
+async def root():
+    return {"name": "FIRE Retirement Tracker API", "version": "2.0.0", "status": "ok"}
+
+
 # Health check
 @app.get("/api/health")
 async def health_check():
