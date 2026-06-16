@@ -18,5 +18,5 @@ async def get_fire_inputs(request: Request, user: CurrentUser = Depends(get_curr
 @router.put("/fire-inputs")
 @limiter.limit("30/minute")
 async def update_fire_inputs(request: Request, data: FireInputs, user: CurrentUser = Depends(get_current_user)) -> dict:
-    result = fire_inputs_svc.save_fire_inputs(user.id, data.model_dump(), user.access_token)
+    result = fire_inputs_svc.save_fire_inputs(user.id, data.model_dump(mode='json'), user.access_token)
     return {"data": result, "message": "FIRE settings saved"}

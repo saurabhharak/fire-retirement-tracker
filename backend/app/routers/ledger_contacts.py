@@ -44,7 +44,7 @@ async def create_contact(
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     result = ledger_contacts_svc.save_contact(
-        user.id, data.model_dump(), user.access_token,
+        user.id, data.model_dump(mode='json'), user.access_token,
     )
     log_audit(user.id, "create_ledger_contact", {"name": data.name}, user.access_token)
     return {"data": result, "message": "Contact created"}
@@ -59,7 +59,7 @@ async def update_contact(
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     result = ledger_contacts_svc.update_contact(
-        str(contact_id), user.id, data.model_dump(exclude_unset=True), user.access_token,
+        str(contact_id), user.id, data.model_dump(mode='json', exclude_unset=True), user.access_token,
     )
     log_audit(user.id, "update_ledger_contact", {"contact_id": str(contact_id)}, user.access_token)
     return {"data": result, "message": "Contact updated"}

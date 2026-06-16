@@ -33,7 +33,7 @@ async def create_transaction(
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     result = ledger_txns_svc.save_transaction(
-        user.id, data.model_dump(), user.access_token,
+        user.id, data.model_dump(mode='json'), user.access_token,
     )
     log_audit(
         user.id,
@@ -53,7 +53,7 @@ async def update_transaction(
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     result = ledger_txns_svc.update_transaction(
-        str(txn_id), user.id, data.model_dump(exclude_unset=True), user.access_token,
+        str(txn_id), user.id, data.model_dump(mode='json', exclude_unset=True), user.access_token,
     )
     log_audit(user.id, "update_ledger_txn", {"txn_id": str(txn_id)}, user.access_token)
     return {"data": result, "message": "Transaction updated"}

@@ -33,7 +33,7 @@ async def create_project(
     data: ProjectCreate,
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
-    result = projects_svc.save_project(user.id, data.model_dump(), user.access_token)
+    result = projects_svc.save_project(user.id, data.model_dump(mode='json'), user.access_token)
     log_audit(user.id, "create_project", {"name": data.name}, user.access_token)
     return {"data": result, "message": "Project created"}
 
@@ -47,7 +47,7 @@ async def update_project(
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     result = projects_svc.update_project(
-        str(project_id), user.id, data.model_dump(exclude_unset=True), user.access_token,
+        str(project_id), user.id, data.model_dump(mode='json', exclude_unset=True), user.access_token,
     )
     log_audit(user.id, "update_project", {"project_id": str(project_id)}, user.access_token)
     return {"data": result, "message": "Project updated"}

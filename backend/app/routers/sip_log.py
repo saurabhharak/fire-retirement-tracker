@@ -22,5 +22,5 @@ async def get_total_invested(request: Request, user: CurrentUser = Depends(get_c
 @router.post("/sip-log")
 @limiter.limit("30/minute")
 async def create_sip_log(request: Request, data: SipLogEntry, user: CurrentUser = Depends(get_current_user)) -> dict:
-    result = sip_log_svc.save_sip_log(user.id, data.model_dump(), user.access_token)
+    result = sip_log_svc.save_sip_log(user.id, data.model_dump(mode='json'), user.access_token)
     return {"data": result, "message": "SIP log saved"}

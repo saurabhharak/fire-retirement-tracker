@@ -69,7 +69,7 @@ async def create_precious_metal_purchase(
 ) -> dict:
     """Create a new precious metal purchase entry."""
     result = precious_metals_svc.save_purchase(
-        user.id, data.model_dump(), user.access_token,
+        user.id, data.model_dump(mode='json'), user.access_token,
     )
     log_audit(
         user.id,
@@ -90,7 +90,7 @@ async def update_precious_metal_purchase(
 ) -> dict:
     """Partially update an existing precious metal purchase."""
     result = precious_metals_svc.update_purchase(
-        str(purchase_id), user.id, data.model_dump(exclude_unset=True), user.access_token,
+        str(purchase_id), user.id, data.model_dump(mode='json', exclude_unset=True), user.access_token,
     )
     log_audit(
         user.id,

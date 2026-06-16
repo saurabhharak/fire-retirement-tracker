@@ -49,7 +49,7 @@ async def create_project_expense(
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     result = project_expenses_svc.save_project_expense(
-        user.id, data.model_dump(), user.access_token,
+        user.id, data.model_dump(mode='json'), user.access_token,
     )
     log_audit(user.id, "create_project_expense", {"project_id": data.project_id, "category": data.category}, user.access_token)
     return {"data": result, "message": "Expense added"}
@@ -64,7 +64,7 @@ async def update_project_expense(
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     result = project_expenses_svc.update_project_expense(
-        str(expense_id), user.id, data.model_dump(exclude_unset=True), user.access_token,
+        str(expense_id), user.id, data.model_dump(mode='json', exclude_unset=True), user.access_token,
     )
     log_audit(user.id, "update_project_expense", {"expense_id": str(expense_id)}, user.access_token)
     return {"data": result, "message": "Expense updated"}

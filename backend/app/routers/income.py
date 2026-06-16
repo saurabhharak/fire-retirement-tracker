@@ -17,7 +17,7 @@ async def list_income(request: Request, limit: int = Query(12, ge=1, le=100), us
 @router.post("/income")
 @limiter.limit("30/minute")
 async def create_income(request: Request, data: IncomeEntry, user: CurrentUser = Depends(get_current_user)) -> dict:
-    result = income_svc.save_income_entry(user.id, data.model_dump(), user.access_token)
+    result = income_svc.save_income_entry(user.id, data.model_dump(mode='json'), user.access_token)
     return {"data": result, "message": "Income entry saved"}
 
 @router.delete("/income/{month}/{year}")
