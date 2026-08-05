@@ -121,7 +121,7 @@ export default function PreciousMetals() {
             className={`text-sm mt-1 ${totalPnl >= 0 ? "text-[#00895E]" : "text-[#E5A100]"}`}
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
-            {totalPnl >= 0 ? "+" : ""}&nbsp;
+            {totalPnl >= 0 ? "+" : "-"}&nbsp;
             {`\u20B9${formatIndian(Math.round(Math.abs(totalPnl)))}`}
           </p>
         </div>

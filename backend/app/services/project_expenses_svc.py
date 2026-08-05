@@ -131,6 +131,6 @@ def compute_project_summary(
     return {
         "total_paid": round(total_paid, 2),
         "entry_count": len(expenses),
-        "category_totals": category_totals,
-        "monthly_totals": monthly_totals,
+        "category_totals": {k: round(v, 2) for k, v in category_totals.items()},
+        "monthly_totals": {k: round(v, 2) for k, v in monthly_totals.items()},
     }

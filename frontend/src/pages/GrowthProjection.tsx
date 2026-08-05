@@ -175,13 +175,20 @@ export default function GrowthProjection() {
     sliders.retirement_age !== fireInputs.retirement_age
   );
 
-  // Debounce slider changes -> update debouncedScenario
+  // Debounce slider changes -> update debouncedScenario.
+  // Each slider change schedules a timer with its OWN key+value; when the
+  // timer fires it must MERGE into the pending scenario, otherwise a change
+  // made in the same 500ms window as another is silently dropped.
+  const pendingRef = useRef<ScenarioParams>({});
   const handleSliderChange = useCallback(
     (key: keyof SliderState & keyof ScenarioParams, value: number) => {
       setSliders((prev) => (prev ? { ...prev, [key]: value } : prev));
+      pendingRef.current = { ...pendingRef.current, [key]: value };
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
       debounceTimer.current = setTimeout(() => {
-        setDebouncedScenario((prev) => ({ ...prev, [key]: value }));
+        const merged = { ...pendingRef.current };
+        pendingRef.current = {};
+        setDebouncedScenario(merged);
       }, 500);
     },
     []

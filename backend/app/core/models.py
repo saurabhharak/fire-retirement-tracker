@@ -1,5 +1,6 @@
 """Pydantic v2 models for FIRE Retirement Tracker input validation."""
 
+import math
 from datetime import date
 from typing import Generic, Literal, Optional, TypeVar
 
@@ -45,6 +46,19 @@ class FireInputs(BaseModel):
         if v <= retirement_age:
             raise ValueError("Life expectancy must exceed retirement age")
         return v
+
+    @model_validator(mode="after")
+    def retirement_age_in_future(self):
+        """Reject a retirement age that is not strictly after the user's current age."""
+        from datetime import date as date_type
+
+        if self.dob is None:
+            return self
+        dob = self.dob if isinstance(self.dob, date_type) else date_type.fromisoformat(self.dob)
+        current_age = math.floor((date_type.today() - dob).days / 365.25)
+        if self.retirement_age <= current_age:
+            raise ValueError("Retirement age must be greater than your current age")
+        return self
 
     @field_validator("cash_pct")
     @classmethod

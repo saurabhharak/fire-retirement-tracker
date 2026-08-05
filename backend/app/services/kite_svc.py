@@ -17,6 +17,24 @@ logger = logging.getLogger(__name__)
 # IST offset for token expiry calculation
 IST = timezone(timedelta(hours=5, minutes=30))
 
+WEEKS_PER_MONTH = 52 / 12  # ~= 4.333 (weekly SIPs run 52 weeks a year)
+
+
+def _normalize_sip_to_monthly(sip: dict) -> float:
+    """Convert a SIP's instalment amount to its monthly-equivalent.
+
+    - weekly:    amount * 52/12 (4.333x) — NOT amount * 4, which understates it
+    - quarterly: amount / 3
+    - monthly / unknown: amount as-is
+    """
+    amt = float(sip.get("instalment_amount", 0))
+    freq = sip.get("frequency", "monthly")
+    if freq == "weekly":
+        return amt * WEEKS_PER_MONTH
+    if freq == "quarterly":
+        return amt / 3
+    return amt
+
 
 def generate_login_url(user_id: str) -> str:
     """Create Kite login URL with signed state JWT + store nonce."""
@@ -222,15 +240,7 @@ def fetch_portfolio(user_id: str, access_token: str) -> dict:
     for sip in raw_sips:
         if sip.get("status") == "ACTIVE":
             sip_lookup[sip["tradingsymbol"]] = sip
-            amt = float(sip.get("instalment_amount", 0))
-            freq = sip.get("frequency", "monthly")
-            # Normalize to monthly
-            if freq == "weekly":
-                total_monthly_sip += amt * 4
-            elif freq == "quarterly":
-                total_monthly_sip += amt / 3
-            else:
-                total_monthly_sip += amt
+            total_monthly_sip += _normalize_sip_to_monthly(sip)
 
         active_sips.append({
             "sip_id": str(sip.get("sip_id", "")),

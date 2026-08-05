@@ -41,7 +41,7 @@ function BucketTooltip({
   return (
     <div className="bg-[#132E3D] border border-[#1A3A5C] rounded-lg p-3 text-sm text-[#E8ECF1]">
       <p className="font-semibold text-[#D4A843] mb-1">{d.name} Bucket</p>
-      <p>Allocation: {(d.pct * 100).toFixed(0)}%</p>
+      <p>Allocation: {d.pct}%</p>
       <p>Amount: {formatRupees(d.amount)}</p>
       <p>Coverage: {d.coverage_years} years</p>
     </div>

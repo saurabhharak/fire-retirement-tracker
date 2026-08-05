@@ -61,5 +61,10 @@ def compute_monthly_expense_total(expenses: list[dict]) -> float:
     for exp in expenses:
         freq = exp.get("frequency", "monthly")
         if freq in divisors:
-            total += exp["amount"] / divisors[freq]
+            amount = exp.get("amount")
+            if amount is None:
+                # NULL amount from the DB (or a malformed row) — skip it rather
+                # than crashing the whole monthly-expense computation.
+                continue
+            total += amount / divisors[freq]
     return round(total, 2)

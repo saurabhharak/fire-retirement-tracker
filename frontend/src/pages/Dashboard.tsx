@@ -31,7 +31,7 @@ import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
 import { EmptyState } from "../components/EmptyState";
 import { formatRupees, formatIndian } from "../lib/formatIndian";
-import { effectiveMonthlyAmount } from "../lib/expenseUtils";
+import { computeDashboardMetrics } from "../lib/dashboardMetrics";
 import { MONTH_NAMES } from "../lib/constants";
 
 export default function Dashboard() {
@@ -72,25 +72,24 @@ export default function Dashboard() {
   }
 
   const inputs = fireInputs.data;
-
-  // Compute derived values for countdown
-  const dob = new Date(inputs.dob);
   const today = new Date();
-  const currentAge = Math.floor(
-    (today.getTime() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-  );
-  const yearsToRetirement = inputs.retirement_age - currentAge;
-  const monthsRemaining = Math.max(0, yearsToRetirement * 12);
-  const countdownYears = Math.floor(monthsRemaining / 12);
-  const countdownMonths = monthsRemaining % 12;
 
-  // Progress percentage (assume working life from age 25 to retirement)
-  const totalYears = inputs.retirement_age - 25;
-  const elapsed = currentAge - 25;
-  const progressPct = Math.min(
-    100,
-    Math.max(0, Math.round((elapsed / totalYears) * 100))
-  );
+  // Compute derived values for countdown, progress, expenses, net worth.
+  const metrics = computeDashboardMetrics({
+    inputs,
+    expenses: expenses.entries as { amount: number; frequency: string }[],
+    sipTotalInvested: sipTotal.data ?? 0,
+    metalsValue: metalsSummary.data?.current_value ?? 0,
+  });
+  const {
+    yearsToRetirement,
+    countdownYears,
+    countdownMonths,
+    progressPct,
+    fixedExpenseTotal,
+    totalSip,
+    totalNetWorth,
+  } = metrics;
 
   // Retirement year
   const retirementYear = today.getFullYear() + yearsToRetirement;
@@ -109,16 +108,7 @@ export default function Dashboard() {
   const goldValue = metalsSummary.data?.current_value ?? 0;
   const existingCorpus = inputs.existing_corpus ?? 0;
   const totalSipInvested = sipTotal.data ?? 0;
-  const totalNetWorth = existingCorpus + totalSipInvested + goldValue;
 
-  // Expenses: sum all active monthly-equivalent expenses (matches IncomeExpenses page formula)
-  const fixedExpenseTotal = expenses.entries.reduce(
-    (sum: number, e: { amount: number; frequency: string }) =>
-      sum + effectiveMonthlyAmount(e.amount, e.frequency),
-    0
-  );
-
-  const totalSip = (inputs.your_sip ?? 0) + (inputs.wife_sip ?? 0);
   // Savings = Income - Expenses (SIPs are investments, NOT expenses)
   const monthlySavings = totalIncome - fixedExpenseTotal;
 

@@ -8,8 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "node scripts/vitest-run.cjs run",
+    "test:watch": "node scripts/vitest-run.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1",

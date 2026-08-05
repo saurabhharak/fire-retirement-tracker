@@ -43,7 +43,14 @@ def get_total_sip_invested(user_id: str, access_token: str) -> float:
         result = client.table("sip_log").select("actual_invested").eq("user_id", user_id).execute()
         if not result.data:
             return 0.0
-        return sum(row["actual_invested"] for row in result.data)
+        total = 0.0
+        for row in result.data:
+            amount = row.get("actual_invested")
+            if amount is None:
+                # Malformed row — skip rather than crash the total.
+                continue
+            total += amount
+        return round(total, 2)
     except Exception as e:
         logger.error("Could not compute total SIP invested: %s", e)
         raise DatabaseError("Could not compute total SIP invested") from e

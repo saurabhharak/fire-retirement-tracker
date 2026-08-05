@@ -36,7 +36,7 @@ def compute_derived_inputs(raw: dict) -> dict:
     today = date.today()
     d["current_age"] = math.floor((today - dob).days / 365.25)
 
-    d["years_to_retirement"] = d["retirement_age"] - d["current_age"]
+    d["years_to_retirement"] = max(0, d["retirement_age"] - d["current_age"])
     d["retirement_duration"] = d["life_expectancy"] - d["retirement_age"]
 
     d["blended_return"] = blended_return(d)
@@ -117,7 +117,12 @@ def compute_growth_projection(inputs: dict) -> list[dict]:
     for year in range(0, 41):
         age = inputs["current_age"] + year
 
-        if year == 0:
+        # SIP contributions happen ONLY up to (and including) retirement year.
+        # An already-retired user (years_to_retirement == 0) contributes nothing.
+        if years_to_retirement == 0:
+            monthly_sip = 0
+            annual_inv = 0
+        elif year == 0:
             monthly_sip = total_sip
             annual_inv = 0
         elif year == 1:
@@ -133,9 +138,13 @@ def compute_growth_projection(inputs: dict) -> list[dict]:
         sip = monthly_sip
 
         if year > 0:
+            # Mid-year convention: prior balance compounds for the full year;
+            # this year's contributions get half a year's return.
             portfolio = portfolio * (1 + br) + annual_inv * (1 + br / 2)
 
         cumulative += annual_inv
+        # Once contributions stop, cumulative stays flat, so gains reflect only
+        # compounding growth (no new money is added).
         gains = portfolio - cumulative
 
         rows.append({

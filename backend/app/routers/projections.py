@@ -12,6 +12,33 @@ from app.services.expenses_svc import compute_monthly_expense_total
 
 router = APIRouter(tags=["projections"])
 
+def _pick_corpus_row(projection: list[dict], years_to_retirement: int, blended_return: float = 0.0) -> float:
+    """Return the projected corpus at retirement.
+
+    Guards against two real bugs:
+    - Negative years_to_retirement (current_age >= retirement_age): indexing a
+      Python list with a negative number silently returns a row from the END,
+      producing a wildly wrong corpus. Clamp to year 0.
+    - years_to_retirement > len(projection) - 1 (the projection is hard-capped
+      at 41 rows): instead of silently clamping to the last row (which
+      understates the corpus), extrapolate by continuing to compound the last
+      row at the blended return for the remaining years.
+    """
+    if years_to_retirement <= 0:
+        return projection[0]["portfolio"]
+
+    last_year = projection[-1]["year"]
+    if years_to_retirement <= last_year:
+        return projection[years_to_retirement]["portfolio"]
+
+    # Extrapolate beyond the projection horizon: no more contributions, so the
+    # portfolio just compounds at the blended return.
+    remaining = years_to_retirement - last_year
+    corpus = projection[-1]["portfolio"]
+    for _ in range(remaining):
+        corpus *= 1 + blended_return
+    return corpus
+
 def _get_inputs(user: CurrentUser) -> dict:
     raw = fire_inputs_svc.load_fire_inputs(user.id, user.access_token)
     if raw is None:
@@ -61,8 +88,9 @@ async def get_growth_projection(
 async def get_retirement_analysis(request: Request, user: CurrentUser = Depends(get_current_user)) -> dict:
     inputs = _get_inputs(user)
     projection = compute_growth_projection(inputs)
-    years = inputs["years_to_retirement"]
-    corpus = projection[years]["portfolio"] if years < len(projection) else projection[-1]["portfolio"]
+    corpus = _pick_corpus_row(
+        projection, inputs["years_to_retirement"], inputs["blended_return"]
+    )
     return {"data": compute_retirement_metrics(inputs, corpus)}
 
 @router.get("/projections/fund-allocation")

@@ -13,8 +13,18 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   Cash: { bg: "bg-[#E8ECF1]/10", text: "text-[#E8ECF1]/80" },
 };
 
+// Backend returns lowercase category keys ("equity", "debt",
+// "precious_metals", "cash"); map them to the display color keys above.
+const CATEGORY_KEY_MAP: Record<string, string> = {
+  equity: "Equity",
+  debt: "Debt",
+  precious_metals: "Gold",
+  cash: "Cash",
+};
+
 function CategoryBadge({ category }: { category: string }) {
-  const style = CATEGORY_COLORS[category] ?? { bg: "bg-[#1A3A5C]/30", text: "text-[#E8ECF1]/70" };
+  const key = CATEGORY_KEY_MAP[category] ?? category;
+  const style = CATEGORY_COLORS[key] ?? { bg: "bg-[#1A3A5C]/30", text: "text-[#E8ECF1]/70" };
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-medium ${style.bg} ${style.text}`}>
       {category}

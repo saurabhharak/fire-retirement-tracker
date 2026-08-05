@@ -33,9 +33,12 @@ export default function SipTracker() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // monthlySips is a flat array of 192 planned values starting from the current month.
-  // Use index 0 for the current month's planned SIP target.
-  const monthlyTarget = monthlySips?.[0] ?? 0;
+  // monthlySips is a flat array of 192 planned values starting from the
+  // current month. Index 0 = this month's target; later months step up.
+  // When logging a past/future month, use that month's index in the schedule
+  // so the planned amount (and deviation) is correct.
+  const monthIndex = (year - currentYear) * 12 + (month - currentMonth);
+  const monthlyTarget = monthlySips?.[monthIndex] ?? monthlySips?.[0] ?? 0;
   const totalInvested = entries.reduce((s, e) => s + e.actual_invested, 0);
 
   async function handleSubmit(e: React.FormEvent) {
