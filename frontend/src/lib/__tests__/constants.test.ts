@@ -17,8 +17,8 @@ describe("COLORS", () => {
 });
 
 describe("NAV_ITEMS", () => {
-  it("has 12 navigation items", () => {
-    expect(NAV_ITEMS).toHaveLength(12);
+  it("has 13 navigation items", () => {
+    expect(NAV_ITEMS).toHaveLength(13);
   });
 
   it("first item is Dashboard at root path", () => {

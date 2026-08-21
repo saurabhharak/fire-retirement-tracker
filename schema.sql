@@ -197,6 +197,17 @@ CREATE TABLE public.kite_sessions (
     updated_at   timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.kite_sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "select_own" ON public.kite_sessions
+    FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "insert_own" ON public.kite_sessions
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "update_own" ON public.kite_sessions
+    FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "delete_own" ON public.kite_sessions
+    FOR DELETE USING (auth.uid() = user_id);
+
 -- ---------------------------------------------------------------------------
 -- 10. mf_portfolio_snapshots (cached MF portfolio, one per user)
 -- ---------------------------------------------------------------------------
@@ -207,6 +218,17 @@ CREATE TABLE public.mf_portfolio_snapshots (
     created_at    timestamptz NOT NULL DEFAULT now(),
     updated_at    timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.mf_portfolio_snapshots ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "select_own" ON public.mf_portfolio_snapshots
+    FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "insert_own" ON public.mf_portfolio_snapshots
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "update_own" ON public.mf_portfolio_snapshots
+    FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "delete_own" ON public.mf_portfolio_snapshots
+    FOR DELETE USING (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------------
 -- 11. kite_oauth_nonces (replay protection for Kite OAuth flow)
@@ -219,6 +241,11 @@ CREATE TABLE public.kite_oauth_nonces (
 );
 
 CREATE INDEX idx_kite_oauth_nonces_expires ON public.kite_oauth_nonces(expires_at);
+
+-- Service-role only (kite_svc.py): RLS with no policies denies all
+-- PostgREST access; service_role bypasses RLS unchanged.
+ALTER TABLE public.kite_oauth_nonces ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.kite_oauth_nonces FROM anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 12. ledger_contacts (personal debt tracker — people)
@@ -468,4 +495,207 @@ CREATE POLICY "update_own" ON public.ledger_transactions
 CREATE POLICY "delete_own" ON public.ledger_transactions
     FOR DELETE USING (
         contact_id IN (SELECT id FROM public.ledger_contacts WHERE user_id = auth.uid())
+    );
+
+-- ---------------------------------------------------------------------------
+-- parlour module — multi-tenant business tracking (Amul parlour)
+-- RLS helpers: membership + role lookups shared by all parlour policies
+-- plpgsql (lazy table refs) + SECURITY DEFINER to avoid inlining
+-- (inlining a STABLE plpgsql fn into the RLS policy caused
+--  max_stack_depth exceeded). search_path pinned to public.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.parlour_member_of(p uuid) RETURNS boolean
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS(
+    SELECT 1 FROM public.parlour_members
+    WHERE parlour_id = p AND member_id = auth.uid()
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.parlour_member_role(p uuid) RETURNS text
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  r text;
+BEGIN
+  SELECT role INTO r FROM public.parlour_members
+  WHERE parlour_id = p AND member_id = auth.uid();
+  RETURN r;
+END;
+$$;
+
+-- parlours — membership-based policies
+ALTER TABLE public.parlours ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "select_own" ON public.parlours
+    FOR SELECT USING (public.parlour_member_of(id));
+
+CREATE POLICY "insert_own" ON public.parlours
+    FOR INSERT WITH CHECK (auth.uid() = owner_id);
+
+CREATE POLICY "update_own" ON public.parlours
+    FOR UPDATE USING (public.parlour_member_role(id) = 'owner')
+              WITH CHECK (public.parlour_member_role(id) = 'owner');
+
+CREATE POLICY "delete_own" ON public.parlours
+    FOR DELETE USING (public.parlour_member_role(id) = 'owner');
+
+-- parlour_members — owner-managed roster
+ALTER TABLE public.parlour_members ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "select_own" ON public.parlour_members
+    FOR SELECT USING (public.parlour_member_of(parlour_id));
+
+CREATE POLICY "insert_own" ON public.parlour_members
+    FOR INSERT WITH CHECK (public.parlour_member_role(parlour_id) = 'owner');
+
+CREATE POLICY "update_own" ON public.parlour_members
+    FOR UPDATE USING (public.parlour_member_role(parlour_id) = 'owner')
+              WITH CHECK (public.parlour_member_role(parlour_id) = 'owner');
+
+CREATE POLICY "delete_own" ON public.parlour_members
+    FOR DELETE USING (public.parlour_member_role(parlour_id) = 'owner');
+
+-- amul_daily_sales — membership-based policies
+ALTER TABLE public.amul_daily_sales ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "select_own" ON public.amul_daily_sales
+    FOR SELECT USING (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+CREATE POLICY "insert_own" ON public.amul_daily_sales
+    FOR INSERT WITH CHECK (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+CREATE POLICY "update_own" ON public.amul_daily_sales
+    FOR UPDATE USING (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    )
+    WITH CHECK (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+CREATE POLICY "delete_own" ON public.amul_daily_sales
+    FOR DELETE USING (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+-- amul_invoices — membership-based policies
+ALTER TABLE public.amul_invoices ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "select_own" ON public.amul_invoices
+    FOR SELECT USING (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+CREATE POLICY "insert_own" ON public.amul_invoices
+    FOR INSERT WITH CHECK (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+CREATE POLICY "update_own" ON public.amul_invoices
+    FOR UPDATE USING (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    )
+    WITH CHECK (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+CREATE POLICY "delete_own" ON public.amul_invoices
+    FOR DELETE USING (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+-- amul_invoice_items — policies via join to amul_invoices -> parlour membership
+ALTER TABLE public.amul_invoice_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "select_own" ON public.amul_invoice_items
+    FOR SELECT USING (
+        invoice_id IN (
+            SELECT id FROM public.amul_invoices
+            WHERE parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+        )
+    );
+
+CREATE POLICY "insert_own" ON public.amul_invoice_items
+    FOR INSERT WITH CHECK (
+        invoice_id IN (
+            SELECT id FROM public.amul_invoices
+            WHERE parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+        )
+    );
+
+CREATE POLICY "update_own" ON public.amul_invoice_items
+    FOR UPDATE USING (
+        invoice_id IN (
+            SELECT id FROM public.amul_invoices
+            WHERE parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+        )
+    )
+    WITH CHECK (
+        invoice_id IN (
+            SELECT id FROM public.amul_invoices
+            WHERE parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+        )
+    );
+
+CREATE POLICY "delete_own" ON public.amul_invoice_items
+    FOR DELETE USING (
+        invoice_id IN (
+            SELECT id FROM public.amul_invoices
+            WHERE parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+        )
+    );
+
+-- sarvam_usage — owner-only spend visibility
+ALTER TABLE public.sarvam_usage ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "select_own" ON public.sarvam_usage
+    FOR SELECT USING (public.parlour_member_role(parlour_id) = 'owner');
+
+CREATE POLICY "insert_own" ON public.sarvam_usage
+    FOR INSERT WITH CHECK (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+CREATE POLICY "update_own" ON public.sarvam_usage
+    FOR UPDATE USING (public.parlour_member_role(parlour_id) = 'owner')
+              WITH CHECK (public.parlour_member_role(parlour_id) = 'owner');
+
+CREATE POLICY "delete_own" ON public.sarvam_usage
+    FOR DELETE USING (public.parlour_member_role(parlour_id) = 'owner');
+
+-- ---------------------------------------------------------------------------
+-- amul_other_expenses — membership-based policies (operating costs)
+-- ---------------------------------------------------------------------------
+ALTER TABLE public.amul_other_expenses ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "select_own" ON public.amul_other_expenses
+    FOR SELECT USING (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+CREATE POLICY "insert_own" ON public.amul_other_expenses
+    FOR INSERT WITH CHECK (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+CREATE POLICY "update_own" ON public.amul_other_expenses
+    FOR UPDATE USING (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    )
+    WITH CHECK (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
+    );
+
+CREATE POLICY "delete_own" ON public.amul_other_expenses
+    FOR DELETE USING (
+        parlour_id IN (SELECT parlour_id FROM public.parlour_members WHERE member_id = auth.uid())
     );

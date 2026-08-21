@@ -21,6 +21,11 @@ class DataNotFoundError(FireTrackerError):
     pass
 
 
+class ForbiddenError(FireTrackerError):
+    """Raised when a user lacks permission for an operation."""
+    pass
+
+
 class AuthenticationError(FireTrackerError):
     """Raised when authentication fails."""
     pass
@@ -37,6 +42,10 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(DataNotFoundError)
     async def data_not_found_handler(request: Request, exc: DataNotFoundError):
         return JSONResponse(status_code=404, content={"detail": exc.message})
+
+    @app.exception_handler(ForbiddenError)
+    async def forbidden_handler(request: Request, exc: ForbiddenError):
+        return JSONResponse(status_code=403, content={"detail": exc.message})
 
     @app.exception_handler(DatabaseError)
     async def database_error_handler(request: Request, exc: DatabaseError):

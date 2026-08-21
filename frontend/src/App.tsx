@@ -19,6 +19,7 @@ const PreciousMetals = lazy(() => import("./pages/PreciousMetals"));
 const SettingsPrivacy = lazy(() => import("./pages/SettingsPrivacy"));
 const Projects = lazy(() => import("./pages/Projects"));
 const MoneyLedger = lazy(() => import("./pages/MoneyLedger"));
+const Parlour = lazy(() => import("./pages/Parlour"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -142,6 +143,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MoneyLedger />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/parlour"
+              element={
+                <ProtectedRoute>
+                  <Parlour />
                 </ProtectedRoute>
               }
             />

@@ -363,3 +363,136 @@ class LedgerTxnUpdate(BaseModel):
     category: Optional[Literal["loan", "borrowed", "payment", "advance", "other"]] = None
     payment_method: Optional[Literal["cash", "upi", "bank_transfer", "other"]] = None
     note: Optional[str] = Field(None, max_length=200)
+
+
+# ---------------------------------------------------------------------------
+# Parlour Module Models (multi-tenant Amul business tracking)
+# ---------------------------------------------------------------------------
+
+class ParlourCreate(BaseModel):
+    """Create a new parlour (business)."""
+    name: str = Field(min_length=1, max_length=100)
+    sarvam_starting_credits: float = Field(default=0, ge=0)
+
+
+class ParlourUpdate(BaseModel):
+    """Partial update for a parlour."""
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    sarvam_starting_credits: Optional[float] = Field(None, ge=0)
+    is_active: Optional[bool] = None
+
+
+class ParlourMemberAdd(BaseModel):
+    """Add a member to a parlour by email."""
+    member_email: str = Field(min_length=1, max_length=200)
+    role: Literal["owner", "data_entry"] = "data_entry"
+
+
+class ParlourMemberUpdate(BaseModel):
+    """Update a member's role."""
+    role: Literal["owner", "data_entry"]
+
+
+class AmulDailySaleCreate(BaseModel):
+    """Create a daily sales entry (WhatsApp cash + online)."""
+    sale_date: date
+    cash_amount: float = Field(default=0, ge=0)
+    online_amount: float = Field(default=0, ge=0)
+    sender_name: str = Field(default="", max_length=100)
+
+    @model_validator(mode="after")
+    def sale_has_positive_total(self):
+        if self.cash_amount + self.online_amount <= 0:
+            raise ValueError("cash_amount + online_amount must be > 0")
+        return self
+
+
+class AmulDailySaleUpdate(BaseModel):
+    """Partial update for a daily sale."""
+    sale_date: Optional[date] = None
+    cash_amount: Optional[float] = Field(None, ge=0)
+    online_amount: Optional[float] = Field(None, ge=0)
+    sender_name: Optional[str] = Field(None, max_length=100)
+
+
+class AmulInvoiceCreate(BaseModel):
+    """Create an invoice header (purchases)."""
+    distributor: str = Field(min_length=1, max_length=200)
+    bill_no: Optional[str] = Field(None, max_length=100)
+    bill_date: date
+    invoice_type: Literal["tax_invoice", "bill_of_supply"]
+    total_amount: float = Field(ge=0)
+    tax_amount: float = Field(default=0, ge=0)
+    taxable_amount: float = Field(default=0, ge=0)
+    source_pdf: Optional[str] = Field(None, max_length=255)
+
+
+class AmulInvoiceUpdate(BaseModel):
+    """Partial update for an invoice header."""
+    distributor: Optional[str] = Field(None, min_length=1, max_length=200)
+    bill_no: Optional[str] = Field(None, max_length=100)
+    bill_date: Optional[date] = None
+    invoice_type: Optional[Literal["tax_invoice", "bill_of_supply"]] = None
+    total_amount: Optional[float] = Field(None, ge=0)
+    tax_amount: Optional[float] = Field(None, ge=0)
+    taxable_amount: Optional[float] = Field(None, ge=0)
+    status: Optional[Literal["draft", "confirmed"]] = None
+
+
+class AmulInvoiceItemCreate(BaseModel):
+    """Create an invoice line item."""
+    sr_no: int = Field(ge=1)
+    hsn: str = Field(default="", max_length=20)
+    description: str = Field(min_length=1, max_length=300)
+    mrp: float = Field(default=0, ge=0)
+    rate: float = Field(default=0, ge=0)
+    box_qty: int = Field(default=0, ge=0)
+    pcs_qty: int = Field(default=0, ge=0)
+    free_qty: int = Field(default=0, ge=0)
+    scheme: str = Field(default="", max_length=200)
+    discount: float = Field(default=0, ge=0)
+    gst_pct: float = Field(default=0, ge=0)
+    gst_amount: float = Field(default=0, ge=0)
+    net_amount: float = Field(default=0, ge=0)
+
+
+class AmulInvoiceItemUpdate(BaseModel):
+    """Partial update for an invoice line item."""
+    sr_no: Optional[int] = Field(None, ge=1)
+    hsn: Optional[str] = Field(None, max_length=20)
+    description: Optional[str] = Field(None, min_length=1, max_length=300)
+    mrp: Optional[float] = Field(None, ge=0)
+    rate: Optional[float] = Field(None, ge=0)
+    box_qty: Optional[int] = Field(None, ge=0)
+    pcs_qty: Optional[int] = Field(None, ge=0)
+    free_qty: Optional[int] = Field(None, ge=0)
+    scheme: Optional[str] = Field(None, max_length=200)
+    discount: Optional[float] = Field(None, ge=0)
+    gst_pct: Optional[float] = Field(None, ge=0)
+    gst_amount: Optional[float] = Field(None, ge=0)
+    net_amount: Optional[float] = Field(None, ge=0)
+
+
+class SarvamExtractionResult(BaseModel):
+    """Response model for a PDF OCR extraction run."""
+    invoices: list[dict]
+    credits_used: float = 0
+    request_id: Optional[str] = None
+    status: Literal["success", "partial", "error"] = "success"
+    source: Literal["sarvam", "docling"] = "sarvam"
+
+
+class AmulOtherExpenseCreate(BaseModel):
+    """Create a non-purchase operating expense (rent, electricity, wages...)."""
+    expense_date: date
+    category: str = Field(min_length=1, max_length=50)
+    description: str = Field(default="", max_length=200)
+    amount: float = Field(gt=0)
+
+
+class AmulOtherExpenseUpdate(BaseModel):
+    """Partial update for an operating expense."""
+    expense_date: Optional[date] = None
+    category: Optional[str] = Field(None, min_length=1, max_length=50)
+    description: Optional[str] = Field(None, max_length=200)
+    amount: Optional[float] = Field(None, gt=0)

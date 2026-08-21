@@ -77,7 +77,7 @@ async def health_check():
 
 
 # Routers
-from app.routers import fire_inputs, income, expenses, sip_log, projections, export, precious_metals, projects, project_expenses, kite, ledger_contacts, ledger_txns
+from app.routers import fire_inputs, income, expenses, sip_log, projections, export, precious_metals, projects, project_expenses, kite, ledger_contacts, ledger_txns, parlours, amul  # noqa: E402
 
 app.include_router(fire_inputs.router, prefix="/api")
 app.include_router(income.router, prefix="/api")
@@ -91,3 +91,5 @@ app.include_router(project_expenses.router, prefix="/api")
 app.include_router(kite.router, prefix="/api")
 app.include_router(ledger_contacts.router, prefix="/api")
 app.include_router(ledger_txns.router, prefix="/api")
+app.include_router(parlours.router, prefix="/api")
+app.include_router(amul.router, prefix="/api")
