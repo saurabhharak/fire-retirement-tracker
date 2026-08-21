@@ -17,7 +17,7 @@ import httpx
 
 from app.config import get_settings
 from app.exceptions import DatabaseError, DataNotFoundError
-from app.services.supabase_client import get_anon_client, get_user_client
+from app.services.supabase_client import get_anon_client, get_service_client, get_user_client
 
 logger = logging.getLogger(__name__)
 
@@ -259,10 +259,11 @@ def _get_db_cached_rates() -> Optional[dict[str, dict]]:
 def _save_db_cached_rates(all_rates: dict[str, dict]) -> None:
     """Persist fresh rates into precious_metal_rate_cache.
 
-    Uses the anon client (no RLS on cache tables).
+    Uses the service-role client: migration 018 enables RLS on the cache
+    (anon read-only), so writes must bypass RLS server-side.
     """
     try:
-        client = get_anon_client()
+        client = get_service_client()
         for metal_type, rates in all_rates.items():
             pure_purity = PURE_PURITY[metal_type]
             pure_rate = rates.get(pure_purity, 0)
@@ -282,7 +283,7 @@ def _cleanup_old_cache_rows() -> None:
     """Delete precious_metal_rate_cache rows older than 90 days."""
     try:
         cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
-        client = get_anon_client()
+        client = get_service_client()  # RLS enabled (migration 018) — writes bypass via service role
         client.table("precious_metal_rate_cache").delete().lt("fetched_at", cutoff).execute()
     except Exception as e:
         logger.warning("Cache cleanup failed (non-blocking): %s", e)

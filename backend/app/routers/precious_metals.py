@@ -18,7 +18,8 @@ router = APIRouter(tags=["precious-metals"])
 
 
 @router.get("/precious-metals/rates")
-@limiter.limit("60/minute")
+# Tighter than reads: a cold cache triggers paid external API calls.
+@limiter.limit("10/minute")
 async def get_metal_rates(
     request: Request,
     metal: Optional[Literal["gold", "silver", "platinum"]] = Query(None, description="Filter by metal type"),

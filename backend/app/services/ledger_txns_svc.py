@@ -37,10 +37,25 @@ def load_transactions(
         client = get_user_client(access_token)
         if contact_id:
             _verify_contact_ownership(contact_id, user_id, client)
+            contact_ids = [contact_id]
+        else:
+            # Defense-in-depth: scope explicitly to the user's own contacts
+            # instead of relying solely on RLS.
+            owned = (
+                client.table("ledger_contacts")
+                .select("id")
+                .eq("user_id", user_id)
+                .execute()
+            )
+            contact_ids = [c["id"] for c in (owned.data or [])]
+            if not contact_ids:
+                return []
 
-        query = client.table("ledger_transactions").select("*")
-        if contact_id:
-            query = query.eq("contact_id", contact_id)
+        query = (
+            client.table("ledger_transactions")
+            .select("*")
+            .in_("contact_id", contact_ids)
+        )
         response = query.order("date", desc=True).execute()
         return response.data or []
     except DataNotFoundError:

@@ -8,7 +8,6 @@ import logging
 from functools import lru_cache
 
 import jwt
-import requests
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWKClient
@@ -18,7 +17,9 @@ from app.config import Settings, get_settings
 
 logger = logging.getLogger(__name__)
 
-security = HTTPBearer()
+# auto_error=False so a missing header returns 401 (with WWW-Authenticate)
+# instead of HTTPBearer's default 403.
+security = HTTPBearer(auto_error=False)
 
 
 class CurrentUser(BaseModel):
@@ -49,18 +50,26 @@ async def get_current_user(
     2. Verifies the JWT signature using the public key
     3. Extracts user ID and email from the token claims
     """
-    token = credentials.credentials
+    token = credentials.credentials if credentials else None
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     try:
         # Get the signing key from JWKS
         jwks_client = _get_jwks_client(settings.supabase_url)
         signing_key = jwks_client.get_signing_key_from_jwt(token)
 
-        # Decode and verify the JWT
+        # Decode and verify the JWT.
+        # ES256 only: Supabase publishes asymmetric keys via JWKS. Accepting
+        # HS256 kept a legacy shared-secret path alive for no benefit.
         payload = jwt.decode(
             token,
             signing_key.key,
-            algorithms=["ES256", "HS256"],  # Support both ECC (new) and HS256 (legacy)
+            algorithms=["ES256"],
             audience="authenticated",
         )
     except jwt.ExpiredSignatureError:

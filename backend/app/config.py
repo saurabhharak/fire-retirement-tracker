@@ -15,7 +15,6 @@ class Settings(BaseSettings):
 
     supabase_url: str
     supabase_key: str
-    supabase_jwt_secret: str = ""  # Optional: only needed for legacy HS256 verification
     environment: str = "production"
     log_level: str = "INFO"
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000"]
@@ -31,6 +30,11 @@ class Settings(BaseSettings):
     kite_redirect_url: str = "http://localhost:8002/api/kite/callback"
     frontend_url: str = "http://localhost:5175"
     supabase_service_key: str = ""       # Service-role key for OAuth callback bypass
+
+    # Sarvam AI (invoice OCR for the Amul parlour module)
+    sarvam_api_key: str = ""             # env: SARVAM_API_KEY
+    sarvam_base_url: str = "https://api.sarvam.ai"   # env: SARVAM_BASE_URL
+    sarvam_model: str = "sarvam-ocr"     # env: SARVAM_MODEL
 
     @field_validator("cors_origins")
     @classmethod

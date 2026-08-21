@@ -9,7 +9,7 @@ from kiteconnect import KiteConnect
 
 from app.config import get_settings
 from app.core.models import KiteHolding, KiteSIP
-from app.exceptions import DatabaseError, DataNotFoundError, ExternalServiceError
+from app.exceptions import DataNotFoundError, ExternalServiceError
 from app.services.supabase_client import get_service_client, get_user_client
 
 logger = logging.getLogger(__name__)
@@ -36,9 +36,22 @@ def _normalize_sip_to_monthly(sip: dict) -> float:
     return amt
 
 
+def _get_state_secret(settings) -> str:
+    """Return the Kite state signing secret, failing closed if unset/weak.
+
+    HMAC with an empty key is valid per PyJWT, so an unset secret would make
+    state JWTs forgeable (any user_id/nonce could be claimed).
+    """
+    secret = settings.kite_state_secret
+    if len(secret) < 32:
+        raise ExternalServiceError("Kite Connect is not configured")
+    return secret
+
+
 def generate_login_url(user_id: str) -> str:
     """Create Kite login URL with signed state JWT + store nonce."""
     settings = get_settings()
+    secret = _get_state_secret(settings)
     nonce = str(uuid.uuid4())
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
 
@@ -63,7 +76,7 @@ def generate_login_url(user_id: str) -> str:
             "aud": "kite-oauth-state",
             "exp": expires_at,
         },
-        settings.kite_state_secret,
+        secret,
         algorithm="HS256",
     )
 
@@ -84,66 +97,49 @@ def exchange_token(request_token: str, state: str) -> str:
     Returns the user_id from the state JWT.
     Uses service-role client (no Supabase JWT available on callback).
 
-    If state is empty (Kite personal apps may not forward it), falls back
-    to finding the most recent unexpired nonce to identify the user.
+    A valid signed state is MANDATORY. The old "most recent unexpired nonce"
+    fallback was removed: it let any callback bind a Zerodha session to
+    whichever user had most recently initiated login (cross-account binding).
     """
     settings = get_settings()
+    secret = _get_state_secret(settings)
     client = get_service_client()
 
-    if state:
-        # Validate state JWT
-        try:
-            payload = jwt.decode(
-                state,
-                settings.kite_state_secret,
-                algorithms=["HS256"],
-                audience="kite-oauth-state",
-                issuer="fire-tracker",
-            )
-        except jwt.ExpiredSignatureError:
-            raise ExternalServiceError("Authorization expired. Please try again.")
-        except jwt.InvalidTokenError:
-            raise ExternalServiceError("Invalid authorization state.")
+    if not state:
+        raise ExternalServiceError("Missing authorization state. Please start the connection again.")
 
-        user_id = payload.get("user_id")
-        nonce = payload.get("nonce")
-        if not user_id or not nonce:
-            raise ExternalServiceError("Invalid authorization state.")
-    else:
-        # Fallback: Kite personal apps may not forward state param.
-        # Find the most recent unexpired nonce to identify the user.
-        try:
-            nonce_result = (
-                client.table("kite_oauth_nonces")
-                .select("nonce, user_id")
-                .gt("expires_at", datetime.now(timezone.utc).isoformat())
-                .order("created_at", desc=True)
-                .limit(1)
-                .execute()
-            )
-            if not nonce_result.data:
-                raise ExternalServiceError("No pending authorization found. Please try again.")
-            user_id = nonce_result.data[0]["user_id"]
-            nonce = nonce_result.data[0]["nonce"]
-        except ExternalServiceError:
-            raise
-        except Exception as e:
-            logger.error("Nonce lookup failed: %s", type(e).__name__)
-            raise ExternalServiceError("Authorization failed. Please try again.")
-
-    # Verify nonce is unused (one-time use) and consume it
+    # Validate state JWT
     try:
-        nonce_result = (
+        payload = jwt.decode(
+            state,
+            secret,
+            algorithms=["HS256"],
+            audience="kite-oauth-state",
+            issuer="fire-tracker",
+        )
+    except jwt.ExpiredSignatureError:
+        raise ExternalServiceError("Authorization expired. Please try again.")
+    except jwt.InvalidTokenError:
+        raise ExternalServiceError("Invalid authorization state.")
+
+    user_id = payload.get("user_id")
+    nonce = payload.get("nonce")
+    if not user_id or not nonce:
+        raise ExternalServiceError("Invalid authorization state.")
+
+    # Atomically claim the nonce (one-time use): the conditional UPDATE only
+    # matches when the nonce exists, is unclaimed, and unexpired. Two
+    # concurrent callbacks presenting the same state cannot both succeed.
+    try:
+        claimed = (
             client.table("kite_oauth_nonces")
-            .select("nonce")
+            .update({"used_at": datetime.now(timezone.utc).isoformat()})
             .eq("nonce", nonce)
+            .gt("expires_at", datetime.now(timezone.utc).isoformat())
             .execute()
         )
-        if not nonce_result.data:
+        if not claimed.data:
             raise ExternalServiceError("Authorization already used or expired.")
-
-        # Delete nonce (consume it)
-        client.table("kite_oauth_nonces").delete().eq("nonce", nonce).execute()
     except ExternalServiceError:
         raise
     except Exception as e:

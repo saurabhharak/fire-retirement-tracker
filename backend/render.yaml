@@ -9,8 +9,6 @@ services:
         sync: false
       - key: SUPABASE_KEY
         sync: false
-      - key: SUPABASE_JWT_SECRET
-        sync: false
       - key: ENVIRONMENT
         value: production
       - key: CORS_ORIGINS

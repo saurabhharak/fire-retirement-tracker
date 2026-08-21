@@ -29,15 +29,30 @@ def load_project_expenses(
     category: Optional[str] = None,
     active_only: bool = True,
 ) -> list[dict]:
-    """Fetch project expenses. Requires project_id for scoping."""
+    """Fetch project expenses, scoped to the user's own projects."""
     try:
+        client = get_user_client(access_token)
         if project_id:
             _verify_project_ownership(project_id, user_id, access_token)
+            project_ids = [project_id]
+        else:
+            # Defense-in-depth: scope explicitly to the user's projects
+            # instead of relying solely on RLS.
+            owned = (
+                client.table("projects")
+                .select("id")
+                .eq("user_id", user_id)
+                .execute()
+            )
+            project_ids = [p["id"] for p in (owned.data or [])]
+            if not project_ids:
+                return []
 
-        client = get_user_client(access_token)
-        query = client.table("project_expenses").select("*")
-        if project_id:
-            query = query.eq("project_id", project_id)
+        query = (
+            client.table("project_expenses")
+            .select("*")
+            .in_("project_id", project_ids)
+        )
         if active_only:
             query = query.eq("is_active", True)
         if category:

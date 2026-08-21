@@ -8,7 +8,6 @@ import math
 from datetime import date
 
 from app.core.constants import BUCKET_PERCENTAGES, FUNDS, SWR_SCENARIOS, SWR_VERDICTS
-from app.core.formatting import format_indian
 
 
 # ---------------------------------------------------------------------------

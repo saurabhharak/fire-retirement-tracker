@@ -4,6 +4,7 @@ from app.core.models import FireInputs
 from app.dependencies import CurrentUser, get_current_user
 from app.rate_limit import limiter
 from app.services import fire_inputs_svc
+from app.services.audit_svc import log_audit
 
 router = APIRouter(tags=["fire-inputs"])
 
@@ -19,4 +20,5 @@ async def get_fire_inputs(request: Request, user: CurrentUser = Depends(get_curr
 @limiter.limit("30/minute")
 async def update_fire_inputs(request: Request, data: FireInputs, user: CurrentUser = Depends(get_current_user)) -> dict:
     result = fire_inputs_svc.save_fire_inputs(user.id, data.model_dump(mode='json'), user.access_token)
+    log_audit(user.id, "update_fire_inputs", {}, user.access_token)
     return {"data": result, "message": "FIRE settings saved"}
