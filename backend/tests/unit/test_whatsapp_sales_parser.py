@@ -80,3 +80,109 @@ class TestParseWhatsAppChat:
         assert len(rows) == 1
         assert rows[0]["cash_amount"] == 5000
         assert rows[0]["online_amount"] == 3076
+
+
+class TestSplitMessageDayAggregation:
+    """Second pass: days where cash and online were posted as separate
+    messages on the same date."""
+
+    def test_separate_side_messages_pair_up(self):
+        chat = (
+            "23/09/25, 9:00 am - Support System: Cash total.1510\n"
+            "23/09/25, 9:01 am - Swapnil 555 Harak: 2046 online\n"
+            "23/09/25, 9:05 am - Support System: 1950 cash\n"
+            "23/09/25, 9:06 am - Swapnil 555 Harak: 917 online\n"
+        )
+        rows = parse_whatsapp_chat(chat)
+        assert len(rows) == 1
+        assert rows[0]["sale_date"] == "2025-09-23"
+        assert rows[0]["cash_amount"] == 3460.0
+        assert rows[0]["online_amount"] == 2963.0
+
+    def test_arithmetic_chain_is_summed(self):
+        chat = (
+            "14/06/26, 8:00 pm - Support System: Online 3230+2550=5780\n"
+            "14/06/26, 8:01 pm - Support System: Cash 2000\n"
+        )
+        rows = parse_whatsapp_chat(chat)
+        assert len(rows) == 1
+        assert rows[0]["online_amount"] == 5780.0
+        assert rows[0]["cash_amount"] == 2000.0
+
+    def test_one_sided_day_is_skipped(self):
+        chat = (
+            "22/09/25, 8:00 pm - Support System: 3900 total.\n"
+            "22/09/25, 8:01 pm - Support System: 400 cash thevto\n"
+            "22/09/25, 8:02 pm - Support System: 510 counter\n"
+        )
+        assert parse_whatsapp_chat(chat) == []
+
+    def test_paired_message_wins_over_same_day_partials(self):
+        chat = (
+            "15/08/26, 10:00 am - Swapnil 555 Harak: 15 August \nCash 2750 \nOnline 5769\n"
+            "15/08/26, 11:00 am - Support System: Cash 100\n"
+        )
+        rows = parse_whatsapp_chat(chat)
+        assert len(rows) == 1
+        assert rows[0]["cash_amount"] == 2750.0
+        assert rows[0]["online_amount"] == 5769.0
+
+
+class TestAuditBugFixes:
+    """Regression tests for bugs found in the Aug 2026 audit."""
+
+    def test_double_dot_separator(self):
+        """Cash..16500 (double dot) should parse. Bug: June 6 was missed."""
+        chat = (
+            "08/06/26, 12:55 am - Swapnil 555 Harak: 6 June\n"
+            "Cash..16500\n"
+            "Online 19337\n"
+            "Hdfc 1730\n"
+        )
+        rows = parse_whatsapp_chat(chat)
+        assert len(rows) == 1
+        assert rows[0]["sale_date"] == "2026-06-06"
+        assert rows[0]["cash_amount"] == 16500.0
+        assert rows[0]["online_amount"] == 19337.0
+
+    def test_no_space_date_label(self):
+        """'11August' (no space) should parse as Aug 11. Bug: misattributed to Aug 12."""
+        chat = (
+            "12/08/26, 6:03 pm - Swapnil 555 Harak: 11August\n"
+            "Cash 4620\n"
+            "Online 5134\n"
+            "13/08/26, 1:00 pm - Swapnil 555 Harak: 12 August\n"
+            "Cash 6170\n"
+            "Online 5367\n"
+        )
+        rows = parse_whatsapp_chat(chat)
+        dates = {r["sale_date"]: r for r in rows}
+        assert "2026-08-11" in dates
+        assert dates["2026-08-11"]["cash_amount"] == 4620.0
+        assert "2026-08-12" in dates
+        assert dates["2026-08-12"]["cash_amount"] == 6170.0
+
+    def test_online_only_labeled_post(self):
+        """'14 August\nOnline 580' with no cash should still produce a row."""
+        chat = (
+            "15/08/26, 12:48 pm - Swapnil 555 Harak: 14 August\n"
+            "Online 580\n"
+        )
+        rows = parse_whatsapp_chat(chat)
+        assert len(rows) == 1
+        assert rows[0]["sale_date"] == "2026-08-14"
+        assert rows[0]["online_amount"] == 580.0
+        assert rows[0]["cash_amount"] == 0.0
+
+    def test_bare_number_label_still_skipped(self):
+        """A bare number label like '26\\nCash 9400' should NOT match as a date
+        (no month name present). Parser correctly falls back to post date."""
+        chat = (
+            "28/06/26, 9:25 am - Swapnil 555 Harak: 26\n"
+            "Cash 9400\n"
+            "Online 13825\n"
+        )
+        rows = parse_whatsapp_chat(chat)
+        assert len(rows) == 1
+        # Falls back to message date since "26" alone is not a valid date label
+        assert rows[0]["sale_date"] == "2026-06-28"

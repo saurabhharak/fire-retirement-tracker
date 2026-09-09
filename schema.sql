@@ -532,8 +532,33 @@ $$;
 -- parlours — membership-based policies
 ALTER TABLE public.parlours ENABLE ROW LEVEL SECURITY;
 
+-- Auto-add the owner as a member (role='owner') when a parlour is created.
+-- SECURITY DEFINER: the bootstrap membership row must bypass parlour_members
+-- RLS (the actor cannot be a member of a parlour that doesn't exist yet).
+-- Safe: the insert policy guarantees NEW.owner_id = auth.uid().
+CREATE OR REPLACE FUNCTION public.add_owner_membership()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    INSERT INTO public.parlour_members (parlour_id, member_id, role)
+    VALUES (NEW.id, NEW.owner_id, 'owner')
+    ON CONFLICT (parlour_id, member_id) DO NOTHING;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_parlours_add_owner
+    AFTER INSERT ON public.parlours
+    FOR EACH ROW EXECUTE FUNCTION public.add_owner_membership();
+
 CREATE POLICY "select_own" ON public.parlours
-    FOR SELECT USING (public.parlour_member_of(id));
+    FOR SELECT TO authenticated USING (
+        public.parlour_member_of(id)
+        OR owner_id = (select auth.uid())
+    );
 
 CREATE POLICY "insert_own" ON public.parlours
     FOR INSERT WITH CHECK (auth.uid() = owner_id);

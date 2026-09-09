@@ -209,3 +209,109 @@ class TestMembershipGate:
         monkeypatch.setattr(amul_invoices_svc, "get_user_client", lambda token: fake)
         with pytest.raises(DataNotFoundError):
             amul_invoices_svc.load_invoices("p2", "u1", "tok")
+
+
+# ===================================================================
+# PDF deduplication
+# ===================================================================
+class TestFindDuplicate:
+    def test_matches_by_bill_no_and_date(self, monkeypatch):
+        rows = [{"id": "inv1", "bill_no": "3987", "bill_date": "2026-08-10"}]
+        fake = _FakeClient(_rows(invoices=rows))
+        _patch_clients(monkeypatch, fake)
+        dup = amul_invoices_svc.find_duplicate(
+            "p1", {"bill_no": "3987", "bill_date": "2026-08-10"}, "tok"
+        )
+        assert dup is not None
+        assert dup["id"] == "inv1"
+
+    def test_no_match_returns_none(self, monkeypatch):
+        fake = _FakeClient(_rows(invoices=[]))
+        _patch_clients(monkeypatch, fake)
+        assert amul_invoices_svc.find_duplicate(
+            "p1", {"bill_no": "0000", "bill_date": "2026-08-10"}, "tok"
+        ) is None
+
+    def test_missing_bill_no_or_date_skips_lookup(self, monkeypatch):
+        fake = _FakeClient(_rows())
+        _patch_clients(monkeypatch, fake)
+        assert amul_invoices_svc.find_duplicate(
+            "p1", {"bill_date": "2026-08-10"}, "tok"
+        ) is None
+        assert amul_invoices_svc.find_duplicate("p1", {"bill_no": "3987"}, "tok") is None
+        assert not any(c[0] == "table" for c in fake.calls)
+
+
+class TestFindByPdfHash:
+    def test_queries_by_parlour_and_hash(self, monkeypatch):
+        fake = _FakeClient(_rows(invoices=[{"id": "inv1", "source_pdf_hash": "abc"}]))
+        _patch_clients(monkeypatch, fake)
+        result = amul_invoices_svc.find_by_pdf_hash("p1", "abc", "tok")
+        assert result and result[0]["id"] == "inv1"
+        eq_calls = [f[1] for f in fake.calls if f[0] == "eq"]
+        assert ("source_pdf_hash", "abc") in eq_calls
+
+    def test_no_match_returns_empty(self, monkeypatch):
+        fake = _FakeClient(_rows(invoices=[]))
+        _patch_clients(monkeypatch, fake)
+        assert amul_invoices_svc.find_by_pdf_hash("p1", "abc", "tok") == []
+
+
+class TestSaveInvoiceWithHash:
+    def test_hash_persisted_when_provided(self, monkeypatch):
+        fake = _FakeClient(_rows(invoices=[{"id": "inv1"}]))
+        _patch_clients(monkeypatch, fake)
+        amul_invoices_svc.save_invoice_with_items(
+            "p1", "u1", {"bill_no": "3987", "bill_date": "2026-08-10"}, [],
+            "tok", source_pdf_hash="deadbeef",
+        )
+        insert_calls = [f[1] for f in fake.calls if f[0] == "insert"]
+        assert any(c.get("source_pdf_hash") == "deadbeef" for c in insert_calls)
+
+    def test_hash_omitted_when_absent(self, monkeypatch):
+        fake = _FakeClient(_rows(invoices=[{"id": "inv1"}]))
+        _patch_clients(monkeypatch, fake)
+        amul_invoices_svc.save_invoice_with_items(
+            "p1", "u1", {"bill_no": "3987", "bill_date": "2026-08-10"}, [], "tok"
+        )
+        insert_calls = [f[1] for f in fake.calls if f[0] == "insert"]
+        assert all("source_pdf_hash" not in c for c in insert_calls)
+
+
+class TestDedupGracefulDegradation:
+    """Pre-migration 024: uploads must still work, dedup just turns off."""
+
+    def test_find_by_pdf_hash_returns_empty_when_column_missing(self, monkeypatch):
+        class _NoColumnClient(_FakeClient):
+            def execute(self):
+                if self._table_name == "amul_invoices":
+                    raise RuntimeError(
+                        "{'message': 'column invoices.source_pdf_hash does not "
+                        "exist', 'code': '42703'}"
+                    )
+                return super().execute()
+
+        fake = _NoColumnClient(_rows())
+        _patch_clients(monkeypatch, fake)
+        assert amul_invoices_svc.find_by_pdf_hash("p1", "abc", "tok") == []
+
+    def test_save_retries_without_hash_when_column_missing(self, monkeypatch):
+        class _RetryClient(_FakeClient):
+            def insert(self, payload):
+                super().insert(payload)
+                if "source_pdf_hash" in payload:
+                    raise RuntimeError(
+                        "{'message': 'column invoices.source_pdf_hash does not "
+                        "exist', 'code': '42703'}"
+                    )
+                return self
+
+        fake = _RetryClient(_rows(invoices=[{"id": "inv1"}]))
+        _patch_clients(monkeypatch, fake)
+        result = amul_invoices_svc.save_invoice_with_items(
+            "p1", "u1", {"bill_no": "3987", "bill_date": "2026-08-10"}, [],
+            "tok", source_pdf_hash="deadbeef",
+        )
+        assert result is not None
+        insert_payloads = [f[1] for f in fake.calls if f[0] == "insert"]
+        assert any("source_pdf_hash" not in p for p in insert_payloads)

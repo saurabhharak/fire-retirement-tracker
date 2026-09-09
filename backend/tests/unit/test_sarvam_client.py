@@ -9,6 +9,7 @@ client can receive: pipe-delimited (Docling fallback) and HTML tables
 import pytest
 
 from app.services import sarvam_client
+from app.services.sarvam_client import merge_page_invoices
 
 
 # ===================================================================
@@ -353,3 +354,72 @@ class TestGetSarvamBalance:
         assert result["starting"] == 10
         assert result["used"] == 5
         assert result["remaining"] == 5
+
+
+# ===================================================================
+# merge_page_invoices — multi-page scan handling
+# ===================================================================
+class TestMergePageInvoices:
+    def _page(self, date=None, bill_no=None, items=None, total=0.0, page_no=None):
+        return {
+            "distributor": "SHIV AGENCY", "bill_no": bill_no, "bill_date": date,
+            "invoice_type": "tax_invoice", "items": items or [],
+            "total_amount": total, "tax_amount": 0.0, "taxable_amount": 0.0,
+            "page_no": page_no, "status": "success", "warning": None,
+        }
+
+    def test_continuation_merges_into_dated_header(self):
+        pages = [
+            self._page(date="2026-07-27", bill_no="AMUL1", items=[{"sr_no": 1}], total=0.0),
+            self._page(items=[{"sr_no": 2}, {"sr_no": 3}], total=8220.13, page_no=2),  # page 2 of 2
+        ]
+        invoices, skipped = merge_page_invoices(pages)
+        assert len(invoices) == 1
+        assert len(invoices[0]["items"]) == 3
+        assert invoices[0]["bill_date"] == "2026-07-27"
+        assert invoices[0]["total_amount"] == 8220.13  # running total from last page
+        assert skipped == 0
+
+    def test_headerless_page_before_any_invoice_is_skipped(self):
+        pages = [
+            self._page(items=[{"sr_no": 1}], total=1761.88),
+            self._page(date="2026-07-03", items=[{"sr_no": 2}], total=5962.16),
+        ]
+        invoices, skipped = merge_page_invoices(pages)
+        assert len(invoices) == 1
+        assert invoices[0]["bill_date"] == "2026-07-03"
+        assert skipped == 1
+
+    def test_standalone_undated_page_not_merged(self):
+        # "Page 1 of 1" headerless table belongs to another document — must
+        # NOT bleed into the previous invoice.
+        pages = [
+            self._page(date="2026-06-05", bill_no="3987", items=[{"sr_no": 1}], total=8324.95),
+            self._page(items=[{"sr_no": 2}], total=2183.78, page_no=1),  # Page 1 of 1
+            self._page(items=[{"sr_no": 3}], total=23959.12),  # no marker at all
+        ]
+        invoices, skipped = merge_page_invoices(pages)
+        assert len(invoices) == 1
+        assert invoices[0]["bill_no"] == "3987"
+        assert len(invoices[0]["items"]) == 1
+        assert invoices[0]["total_amount"] == 8324.95
+        assert skipped == 2
+
+    def test_empty_header_invoice_dropped(self):
+        pages = [
+            self._page(date="2026-07-18", bill_no=None, items=[], total=0.0),
+            self._page(date="2026-07-20", bill_no="12602380", items=[{"sr_no": 1}], total=21103.0),
+        ]
+        invoices, skipped = merge_page_invoices(pages)
+        assert len(invoices) == 1
+        assert invoices[0]["bill_no"] == "12602380"
+        assert skipped == 1
+
+    def test_two_dated_pages_stay_separate(self):
+        pages = [
+            self._page(date="2026-07-03", bill_no="A", items=[{"sr_no": 1}], total=100.0),
+            self._page(date="2026-06-05", bill_no="B", items=[{"sr_no": 2}], total=200.0),
+        ]
+        invoices, skipped = merge_page_invoices(pages)
+        assert len(invoices) == 2
+        assert skipped == 0

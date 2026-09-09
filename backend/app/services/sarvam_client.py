@@ -43,9 +43,12 @@ def _to_float(value) -> float:
 
 def _to_int(value) -> int:
     try:
-        return int(re.sub(r"[^\d]", "", str(value)) or 0)
+        n = int(re.sub(r"[^\d]", "", str(value)) or 0)
     except (ValueError, TypeError):
         return 0
+    # OCR sometimes concatenates digit runs (FSSAI/GSTIN fragments) into sr or
+    # qty cells; anything beyond Postgres integer range is garbage, not a count.
+    return n if 0 <= n <= 2_000_000_000 else 0
 
 
 def _classify_distributor(text: str) -> str:
@@ -368,9 +371,16 @@ def parse_invoice_page(text: str) -> dict:
         "total_amount": round(total_amount, 2),
         "tax_amount": round(tax_amount, 2),
         "taxable_amount": round(taxable_amount, 2),
+        "page_no": _extract_page_marker(text),
         "status": status,
         "warning": warning,
     }
+
+
+def _extract_page_marker(text: str):
+    """Return the N from a "Page N of M" marker, else None."""
+    m = re.search(r"Page\s+(\d+)\s+of\s+\d+", text, re.IGNORECASE)
+    return int(m.group(1)) if m else None
 
 
 # ===================================================================
@@ -634,12 +644,15 @@ def extract_invoices_from_pdf(
 
     # Each digitise document is one page (typically one invoice). Docling text
     # may contain several invoices — split by distributor headers.
+    skipped_undated = 0
     if use_docling:
         chunks = split_invoice_chunks(text)
         parsed = [parse_invoice_page(chunk) for chunk in chunks]
+        parsed = [p for p in parsed if p["status"] != "partial" or p["items"]]
     else:
         parsed = [parse_invoice_page(page_text) for page_text in text_parts if page_text.strip()]
-    parsed = [p for p in parsed if p["status"] != "partial" or p["items"]]
+        parsed = [p for p in parsed if p["status"] != "partial" or p["items"]]
+        parsed, skipped_undated = merge_page_invoices(parsed)
     if not parsed:
         parsed = [parse_invoice_page(text)]
     return {
@@ -648,7 +661,48 @@ def extract_invoices_from_pdf(
         "request_id": request_id,
         "status": "success" if all(p["status"] == "success" for p in parsed) else "partial",
         "source": source,
+        "skipped_undated": skipped_undated,
     }
+
+
+def merge_page_invoices(parsed_pages: list) -> tuple:
+    """Merge page-level parses into invoice records.
+
+    Scanned multi-page PDFs arrive as one flattened text per page: an
+    invoice's header page carries the bill date, following table-only
+    continuation pages do not. A dated page starts a new invoice; an undated
+    page merges into the current one ONLY when its "Page N of M" marker says
+    it is a continuation (N >= 2) — headerless standalone pages ("Page 1 of
+    1", no marker) belong to some other document and would silently corrupt
+    the previous invoice, so they are skipped and counted instead. A merged
+    continuation page carries the running total, so the largest page total
+    wins. Invoices left with neither items nor a total are dropped as noise.
+    """
+    invoices = []
+    skipped = 0
+    for page in parsed_pages:
+        items = page.get("items") or []
+        total = float(page.get("total_amount") or 0.0)
+        page_no = page.get("page_no")
+        if page.get("bill_date"):
+            invoices.append(dict(page))
+            continue
+        if invoices and page_no is not None and page_no >= 2:
+            current = invoices[-1]
+            current["items"] = (current.get("items") or []) + items
+            if total > float(current.get("total_amount") or 0.0):
+                current["total_amount"] = total
+            continue
+        skipped += 1
+    kept = []
+    for invoice in invoices:
+        if not (invoice.get("items") or []) and not float(
+            invoice.get("total_amount") or 0.0
+        ):
+            skipped += 1
+            continue
+        kept.append(invoice)
+    return kept, skipped
 
 
 def split_invoice_chunks(text: str) -> list[str]:
