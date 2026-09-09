@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { AuthLayout } from "../layouts/AuthLayout";
 
-type Tab = "otp" | "phone" | "password" | "signup";
+type Tab = "otp" | "password" | "signup";
 
 export function Login() {
   const [activeTab, setActiveTab] = useState<Tab>("otp");
@@ -15,9 +15,6 @@ export function Login() {
           <TabButton active={activeTab === "otp"} onClick={() => setActiveTab("otp")}>
             Email OTP
           </TabButton>
-          <TabButton active={activeTab === "phone"} onClick={() => setActiveTab("phone")}>
-            Mobile OTP
-          </TabButton>
           <TabButton active={activeTab === "password"} onClick={() => setActiveTab("password")}>
             Password
           </TabButton>
@@ -27,7 +24,6 @@ export function Login() {
         </div>
 
         {activeTab === "otp" && <OtpForm />}
-        {activeTab === "phone" && <PhoneOtpForm />}
         {activeTab === "password" && <PasswordForm />}
         {activeTab === "signup" && <SignupForm />}
       </div>
@@ -144,107 +140,6 @@ function OtpForm() {
         className="w-full text-sm text-[#E8ECF1]/50 hover:text-[#E8ECF1]/80 transition-colors cursor-pointer"
       >
         Back to email
-      </button>
-    </form>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Phone OTP Form                                                      */
-/* ------------------------------------------------------------------ */
-
-function PhoneOtpForm() {
-  const { sendPhoneOtp, verifyPhoneOtp } = useAuth();
-  const [phone, setPhone] = useState("");
-  const [otpCode, setOtpCode] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-
-  const handleSendOtp = async (e: FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-    const digits = phone.replace(/\D/g, "");
-    if (digits.length !== 10) {
-      setError("Enter a 10-digit mobile number");
-      return;
-    }
-    setLoading(true);
-    try {
-      await sendPhoneOtp(`+91${digits}`);
-      setOtpSent(true);
-      setMessage("OTP sent! Check your messages.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-    setLoading(true);
-    try {
-      await verifyPhoneOtp(`+91${phone.replace(/\D/g, "")}`, otpCode);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!otpSent) {
-    return (
-      <form onSubmit={handleSendOtp} className="space-y-4">
-        <InputField
-          label="Mobile Number"
-          type="tel"
-          value={phone}
-          onChange={setPhone}
-          placeholder="98765 43210"
-          maxLength={12}
-          required
-        />
-        <p className="text-xs text-[#E8ECF1]/50">Indian numbers (+91 added automatically)</p>
-        <ErrorMessage message={error} />
-        <SuccessMessage message={message} />
-        <SubmitButton loading={loading}>Send OTP</SubmitButton>
-      </form>
-    );
-  }
-
-  return (
-    <form onSubmit={handleVerifyOtp} className="space-y-4">
-      <p className="text-sm text-[#E8ECF1]/70">
-        OTP sent to <span className="text-[#D4A843]">+91 {phone}</span>
-      </p>
-      <InputField
-        label="OTP Code"
-        type="text"
-        value={otpCode}
-        onChange={setOtpCode}
-        placeholder="Enter 6-digit code"
-        maxLength={6}
-        required
-      />
-      <ErrorMessage message={error} />
-      <SuccessMessage message={message} />
-      <SubmitButton loading={loading}>Verify OTP</SubmitButton>
-      <button
-        type="button"
-        onClick={() => {
-          setOtpSent(false);
-          setOtpCode("");
-          setError("");
-          setMessage("");
-        }}
-        className="w-full text-sm text-[#E8ECF1]/50 hover:text-[#E8ECF1]/80 transition-colors cursor-pointer"
-      >
-        Back to mobile number
       </button>
     </form>
   );

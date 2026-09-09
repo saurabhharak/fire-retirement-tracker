@@ -7,8 +7,7 @@ interface MembersManagerProps {
   currentUserId?: string | null;
   isLoading?: boolean;
   onAdd: (input: {
-    email?: string;
-    phone?: string;
+    email: string;
     role: "owner" | "data_entry";
   }) => Promise<unknown>;
   onRemove: (memberId: string) => Promise<unknown>;
@@ -21,32 +20,22 @@ export function MembersManager({
   onAdd,
   onRemove,
 }: MembersManagerProps) {
-  const [contact, setContact] = useState("");
+  const [email, setEmail] = useState("");
   const [role, setRole] = useState<"data_entry" | "owner">("data_entry");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   const handleAdd = async () => {
-    const value = contact.trim();
-    if (!value) {
-      setError("Enter an email or a 10-digit mobile number");
-      return;
-    }
-    const isEmail = value.includes("@");
-    const digits = value.replace(/\D/g, "");
-    if (!isEmail && digits.length !== 10) {
-      setError("Mobile number must be 10 digits");
+    const value = email.trim();
+    if (!value || !value.includes("@")) {
+      setError("Enter a valid email address");
       return;
     }
     setError("");
     setBusy(true);
     try {
-      await onAdd(
-        isEmail
-          ? { email: value, role }
-          : { phone: `+91${digits}`, role }
-      );
-      setContact("");
+      await onAdd({ email: value, role });
+      setEmail("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to add member");
     } finally {
@@ -66,19 +55,17 @@ export function MembersManager({
       {/* Add member */}
       <div className="flex flex-wrap items-end gap-3 mb-4">
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs text-[#E8ECF1]/60 mb-1">
-            Email or Mobile Number
-          </label>
+          <label className="block text-xs text-[#E8ECF1]/60 mb-1">Email</label>
           <input
-            type="text"
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-            placeholder="swapnil@example.com  or  98765 43210"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="swapnil@example.com"
             className="w-full bg-[#0D1B2A] border border-[#1A3A5C]/50 rounded px-3 py-1.5 text-sm text-[#E8ECF1]"
           />
           <p className="text-xs text-[#E8ECF1]/40 mt-1">
-            Mobile members get an account created automatically — they log in with a
-            Mobile OTP on the login page.
+            The member needs an account first (Sign Up tab on the login page) —
+            they then log in with Email OTP or password.
           </p>
         </div>
         <div>

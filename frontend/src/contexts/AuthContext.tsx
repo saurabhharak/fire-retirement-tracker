@@ -10,8 +10,6 @@ interface AuthContextType {
   loginWithPassword: (email: string, password: string) => Promise<void>;
   sendOtp: (email: string) => Promise<void>;
   verifyOtp: (email: string, token: string) => Promise<void>;
-  sendPhoneOtp: (phone: string) => Promise<void>;
-  verifyPhoneOtp: (phone: string, token: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -61,16 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   }, []);
 
-  const sendPhoneOtp = useCallback(async (phone: string) => {
-    const { error } = await supabase.auth.signInWithOtp({ phone });
-    if (error) throw error;
-  }, []);
-
-  const verifyPhoneOtp = useCallback(async (phone: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
-    if (error) throw error;
-  }, []);
-
   const signup = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
@@ -102,8 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       session, user, loading, isAuthenticated: !!session,
-      loginWithPassword, sendOtp, verifyOtp, sendPhoneOtp, verifyPhoneOtp,
-      signup, resetPassword, logout,
+      loginWithPassword, sendOtp, verifyOtp, signup, resetPassword, logout,
     }}>
       {children}
     </AuthContext.Provider>
