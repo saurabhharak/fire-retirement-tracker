@@ -5,6 +5,8 @@ export interface ParlourMember {
   id: string;
   member_id: string;
   role: "owner" | "data_entry";
+  phone?: string | null;
+  email?: string | null;
   created_at?: string;
 }
 
@@ -22,8 +24,15 @@ export function useParlourMembers(parlourId?: string) {
   });
 
   const addMember = useMutation({
-    mutationFn: ({ email, role }: { email: string; role: "owner" | "data_entry" }) =>
-      api.post(`/api/parlours/${parlourId}/members`, { member_email: email, role }),
+    mutationFn: ({
+      email,
+      phone,
+      role,
+    }: {
+      email?: string;
+      phone?: string;
+      role: "owner" | "data_entry";
+    }) => api.post(`/api/parlours/${parlourId}/members`, { member_email: email, phone, role }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["parlour-members"] });
       queryClient.invalidateQueries({ queryKey: ["parlours"] });

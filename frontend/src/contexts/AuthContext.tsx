@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef, type ReactNode, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import type { Session, User } from "@supabase/supabase-js";
 
@@ -10,6 +10,8 @@ interface AuthContextType {
   loginWithPassword: (email: string, password: string) => Promise<void>;
   sendOtp: (email: string) => Promise<void>;
   verifyOtp: (email: string, token: string) => Promise<void>;
+  sendPhoneOtp: (phone: string) => Promise<void>;
+  verifyPhoneOtp: (phone: string, token: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -21,13 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const initialized = useRef(false);
 
   useEffect(() => {
-    // Only initialize once
-    if (initialized.current) return;
-    initialized.current = true;
-
     // Get initial session
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
@@ -35,12 +32,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    // Listen for auth changes (login, logout, token refresh)
+    // Listen for auth changes (login, logout, token refresh). The subscription
+    // must be re-created on every mount — under React StrictMode the first
+    // mount's cleanup runs before the second mount, so a run-once guard here
+    // would leave the app with no active listener and logins would not
+    // navigate until a manual reload.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
-      // Don't set loading=false here on first load — getSession handles that
-      if (!loading) return;
       setLoading(false);
     });
 
@@ -59,6 +58,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyOtp = useCallback(async (email: string, token: string) => {
     const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    if (error) throw error;
+  }, []);
+
+  const sendPhoneOtp = useCallback(async (phone: string) => {
+    const { error } = await supabase.auth.signInWithOtp({ phone });
+    if (error) throw error;
+  }, []);
+
+  const verifyPhoneOtp = useCallback(async (phone: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
     if (error) throw error;
   }, []);
 
@@ -93,7 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       session, user, loading, isAuthenticated: !!session,
-      loginWithPassword, sendOtp, verifyOtp, signup, resetPassword, logout,
+      loginWithPassword, sendOtp, verifyOtp, sendPhoneOtp, verifyPhoneOtp,
+      signup, resetPassword, logout,
     }}>
       {children}
     </AuthContext.Provider>

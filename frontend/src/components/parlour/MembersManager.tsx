@@ -6,7 +6,11 @@ interface MembersManagerProps {
   members: ParlourMember[];
   currentUserId?: string | null;
   isLoading?: boolean;
-  onAdd: (input: { email: string; role: "owner" | "data_entry" }) => Promise<unknown>;
+  onAdd: (input: {
+    email?: string;
+    phone?: string;
+    role: "owner" | "data_entry";
+  }) => Promise<unknown>;
   onRemove: (memberId: string) => Promise<unknown>;
 }
 
@@ -17,21 +21,32 @@ export function MembersManager({
   onAdd,
   onRemove,
 }: MembersManagerProps) {
-  const [email, setEmail] = useState("");
+  const [contact, setContact] = useState("");
   const [role, setRole] = useState<"data_entry" | "owner">("data_entry");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   const handleAdd = async () => {
-    if (!email.trim()) {
-      setError("Enter an email address");
+    const value = contact.trim();
+    if (!value) {
+      setError("Enter an email or a 10-digit mobile number");
+      return;
+    }
+    const isEmail = value.includes("@");
+    const digits = value.replace(/\D/g, "");
+    if (!isEmail && digits.length !== 10) {
+      setError("Mobile number must be 10 digits");
       return;
     }
     setError("");
     setBusy(true);
     try {
-      await onAdd({ email: email.trim(), role });
-      setEmail("");
+      await onAdd(
+        isEmail
+          ? { email: value, role }
+          : { phone: `+91${digits}`, role }
+      );
+      setContact("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to add member");
     } finally {
@@ -41,6 +56,9 @@ export function MembersManager({
 
   if (isLoading) return null;
 
+  const contactLabel = (m: ParlourMember) =>
+    m.email || m.phone || `${m.member_id.slice(0, 8)}…`;
+
   return (
     <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30 mb-6">
       <h3 className="text-sm font-semibold text-[#E8ECF1] mb-3">Members</h3>
@@ -48,14 +66,20 @@ export function MembersManager({
       {/* Add member */}
       <div className="flex flex-wrap items-end gap-3 mb-4">
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs text-[#E8ECF1]/60 mb-1">Email</label>
+          <label className="block text-xs text-[#E8ECF1]/60 mb-1">
+            Email or Mobile Number
+          </label>
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="swapnil@example.com"
+            type="text"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            placeholder="swapnil@example.com  or  98765 43210"
             className="w-full bg-[#0D1B2A] border border-[#1A3A5C]/50 rounded px-3 py-1.5 text-sm text-[#E8ECF1]"
           />
+          <p className="text-xs text-[#E8ECF1]/40 mt-1">
+            Mobile members get an account created automatically — they log in with a
+            Mobile OTP on the login page.
+          </p>
         </div>
         <div>
           <label className="block text-xs text-[#E8ECF1]/60 mb-1">Role</label>
@@ -79,13 +103,19 @@ export function MembersManager({
       </div>
       {error && <p className="text-sm text-[#E5A100] mb-2">{error}</p>}
 
+      {members.length === 0 && (
+        <p className="text-sm text-[#E8ECF1]/50">
+          No members yet — add your team above.
+        </p>
+      )}
+
       {/* Members table */}
       {members.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-[#E8ECF1]">
             <thead>
               <tr className="text-left text-[#E8ECF1]/50 border-b border-[#1A3A5C]/30">
-                <th className="py-2 pr-3 font-medium">Member ID</th>
+                <th className="py-2 pr-3 font-medium">Contact</th>
                 <th className="py-2 pr-3 font-medium">Role</th>
                 <th className="py-2 pr-3 font-medium">You?</th>
                 <th className="py-2" />
@@ -94,7 +124,7 @@ export function MembersManager({
             <tbody>
               {members.map((m) => (
                 <tr key={m.id} className="border-b border-[#1A3A5C]/20">
-                  <td className="py-2 pr-3 font-mono text-xs">{m.member_id}</td>
+                  <td className="py-2 pr-3">{contactLabel(m)}</td>
                   <td className="py-2 pr-3 capitalize">{m.role}</td>
                   <td className="py-2 pr-3">
                     {m.member_id === currentUserId ? "Yes" : ""}
@@ -104,7 +134,7 @@ export function MembersManager({
                       <button
                         onClick={() => onRemove(m.id)}
                         className="text-[#E5A100]/70 hover:text-[#E5A100] transition-colors"
-                        aria-label={`Remove member ${m.member_id}`}
+                        aria-label={`Remove member ${contactLabel(m)}`}
                       >
                         <Trash2 size={16} />
                       </button>

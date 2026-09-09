@@ -80,6 +80,7 @@ async def add_member(
 ) -> dict:
     result = parlours_svc.add_member(
         str(parlour_id), data.member_email, data.role, user.id, user.access_token,
+        phone=data.phone,
     )
     return {"data": result, "message": "Member added"}
 

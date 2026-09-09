@@ -201,8 +201,35 @@ class TestMembers:
             }
         )
         monkeypatch.setattr(parlours_svc, "get_user_client", lambda token: fake)
+        monkeypatch.setattr(parlours_svc, "_list_auth_users", lambda: {})
         result = parlours_svc.list_members("p1", "u1", "tok")
         assert len(result) == 2
+
+    def test_list_members_enriches_with_email_and_phone(self, monkeypatch):
+        fake = _FakeClient(
+            {
+                "parlour_members": [
+                    {"id": "m1", "parlour_id": "p1", "member_id": "u1", "role": "owner"},
+                    {"id": "m2", "parlour_id": "p1", "member_id": "u2",
+                     "role": "data_entry", "phone": "+919876543211"},
+                ]
+            }
+        )
+        monkeypatch.setattr(parlours_svc, "get_user_client", lambda token: fake)
+        monkeypatch.setattr(
+            parlours_svc,
+            "_list_auth_users",
+            lambda: {
+                "u1": {"email": "owner@example.com", "phone": None},
+                "u2": {"email": None, "phone": "+919876543222"},
+            },
+        )
+        result = parlours_svc.list_members("p1", "u1", "tok")
+        by_id = {r["member_id"]: r for r in result}
+        assert by_id["u1"]["email"] == "owner@example.com"
+        assert by_id["u2"]["email"] is None
+        # row's own phone wins over the auth user's
+        assert by_id["u2"]["phone"] == "+919876543211"
 
     def test_add_member_resolves_email_to_user_id(self, monkeypatch):
         fake = _FakeClient(
@@ -212,11 +239,10 @@ class TestMembers:
                 ]
             }
         )
-        # service-role client resolves email -> user_id
-        service_fake = _FakeClient(
-            {"auth.users": [{"id": "u2", "email": "swapnil@example.com"}]}
+        # email -> user_id resolution goes through the Admin Auth API
+        monkeypatch.setattr(
+            parlours_svc, "_resolve_user_id_by_email", lambda email: "u2"
         )
-        monkeypatch.setattr(parlours_svc, "get_service_client", lambda: service_fake)
         monkeypatch.setattr(parlours_svc, "get_user_client", lambda token: fake)
         monkeypatch.setattr(parlours_svc, "log_audit", lambda *a, **k: None)
 
@@ -237,6 +263,77 @@ class TestMembers:
         )
         assert result["member_id"] == "u2"
         assert result["role"] == "data_entry"
+
+    def test_add_member_by_phone_creates_auth_user(self, monkeypatch):
+        fake = _FakeClient(
+            {
+                "parlour_members": [
+                    {"parlour_id": "p1", "member_id": "u1", "role": "owner"}
+                ]
+            }
+        )
+        monkeypatch.setattr(
+            parlours_svc, "_resolve_user_id_by_phone", lambda phone: None
+        )
+        monkeypatch.setattr(
+            parlours_svc, "_create_user_by_phone", lambda phone: "u3"
+        )
+        monkeypatch.setattr(parlours_svc, "get_user_client", lambda token: fake)
+        monkeypatch.setattr(parlours_svc, "log_audit", lambda *a, **k: None)
+
+        inserted = {}
+        orig_insert = fake.insert
+
+        def _insert(payload):
+            inserted.update(payload)
+            return orig_insert(payload)
+
+        fake.insert = _insert
+
+        parlours_svc.add_member("p1", None, "data_entry", "u1", "tok", phone="98765 43210")
+        assert inserted["member_id"] == "u3"
+        assert inserted["phone"] == "+919876543210"
+
+    def test_add_member_by_phone_resolves_existing_user(self, monkeypatch):
+        fake = _FakeClient(
+            {
+                "parlour_members": [
+                    {"parlour_id": "p1", "member_id": "u1", "role": "owner"}
+                ]
+            }
+        )
+        monkeypatch.setattr(
+            parlours_svc, "_resolve_user_id_by_phone", lambda phone: "u4"
+        )
+        monkeypatch.setattr(parlours_svc, "get_user_client", lambda token: fake)
+        monkeypatch.setattr(parlours_svc, "log_audit", lambda *a, **k: None)
+
+        parlours_svc.add_member("p1", None, "data_entry", "u1", "tok", phone="+919812345678")
+        assert any(c[0] == "insert" for c in fake.calls)
+
+    def test_add_member_with_invalid_phone_raises(self, monkeypatch):
+        fake = _FakeClient(
+            {
+                "parlour_members": [
+                    {"parlour_id": "p1", "member_id": "u1", "role": "owner"}
+                ]
+            }
+        )
+        monkeypatch.setattr(parlours_svc, "get_user_client", lambda token: fake)
+        with pytest.raises(DataNotFoundError):
+            parlours_svc.add_member("p1", None, "data_entry", "u1", "tok", phone="123")
+
+    def test_add_member_requires_email_or_phone(self, monkeypatch):
+        fake = _FakeClient(
+            {
+                "parlour_members": [
+                    {"parlour_id": "p1", "member_id": "u1", "role": "owner"}
+                ]
+            }
+        )
+        monkeypatch.setattr(parlours_svc, "get_user_client", lambda token: fake)
+        with pytest.raises(DataNotFoundError):
+            parlours_svc.add_member("p1", None, "data_entry", "u1", "tok")
 
     def test_add_member_non_owner_raises(self, monkeypatch):
         fake = _FakeClient(
