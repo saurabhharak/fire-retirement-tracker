@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { isPrimaryUser } from "./lib/constants";
 import { AppLayout } from "./layouts/AppLayout";
 import Login from "./pages/Login";
 
@@ -22,8 +23,13 @@ const MoneyLedger = lazy(() => import("./pages/MoneyLedger"));
 const Parlour = lazy(() => import("./pages/Parlour"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  // Parlour team members only ever get the Parlour page
+  if (!isPrimaryUser(user?.email) && location.pathname !== "/parlour") {
+    return <Navigate to="/parlour" replace />;
+  }
   return <AppLayout>{children}</AppLayout>;
 }
 

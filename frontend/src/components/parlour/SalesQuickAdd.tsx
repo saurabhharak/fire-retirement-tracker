@@ -41,6 +41,8 @@ export function SalesQuickAdd({ onSave }: SalesQuickAddProps) {
       setCash("");
       setOnline("");
       setSender("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save the sale");
     } finally {
       setSaving(false);
     }

@@ -13,6 +13,10 @@ export function InvoiceUpload({ onUpload }: InvoiceUploadProps) {
     credits?: number;
     status?: string;
     source?: string;
+    duplicate?: boolean;
+    createdCount?: number;
+    skippedDuplicates?: number;
+    skippedUndated?: number;
   } | null>(null);
   const [error, setError] = useState("");
 
@@ -30,11 +34,19 @@ export function InvoiceUpload({ onUpload }: InvoiceUploadProps) {
         credits_used?: number;
         status?: string;
         source?: string;
+        duplicate?: boolean;
+        created_count?: number;
+        skipped_duplicates?: number;
+        skipped_undated?: number;
       };
       setResult({
         credits: res?.credits_used ?? 0,
         status: res?.status,
         source: res?.source,
+        duplicate: res?.duplicate,
+        createdCount: res?.created_count,
+        skippedDuplicates: res?.skipped_duplicates,
+        skippedUndated: res?.skipped_undated,
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
@@ -70,10 +82,31 @@ export function InvoiceUpload({ onUpload }: InvoiceUploadProps) {
           {uploading ? "Extracting..." : "Upload & Extract"}
         </button>
       </div>
-      {result && (
+      {result && result.duplicate && (
+        <p className="text-sm mt-3 text-[#E5A100]">
+          This PDF was already uploaded — showing the existing invoice(s). No OCR
+          rerun, 0 credits used.
+        </p>
+      )}
+      {result && !result.duplicate && (
         <p className="text-sm mt-3 text-[#E8ECF1]/80">
           Extraction {result.status ?? "done"} via {result.source ?? "OCR"} —{" "}
           <span className="text-[#D4A843]">{result.credits ?? 0} credits used</span>
+          {result.createdCount !== undefined && (
+            <> · {result.createdCount} invoice(s) created</>
+          )}
+          {result.skippedDuplicates ? (
+            <>
+              {" "}
+              · <span className="text-[#E5A100]">{result.skippedDuplicates} duplicate(s) skipped</span>
+            </>
+          ) : null}
+          {result.skippedUndated ? (
+            <>
+              {" "}
+              · <span className="text-[#E5A100]">{result.skippedUndated} page(s) skipped — no readable bill date</span>
+            </>
+          ) : null}
         </p>
       )}
       {error && <p className="text-sm text-[#E5A100] mt-3">{error}</p>}

@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { Check, Pencil, Trash2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Pencil, Trash2, X } from "lucide-react";
 import { formatRupees } from "../../lib/formatIndian";
 import { dailyTotal } from "../../lib/parlourCalculations";
 import type { AmulDailySale } from "../../hooks/useAmulSales";
 
-const PAGE_SIZE = 20;
+const editInputClass =
+  "w-24 bg-[#0D1B2A] border border-[#1A3A5C]/50 rounded px-2 py-1 text-sm text-[#E8ECF1]";
 
 interface SalesTableProps {
   sales: AmulDailySale[];
@@ -12,38 +13,51 @@ interface SalesTableProps {
   onUpdate?: (id: string, data: Partial<AmulDailySale>) => Promise<unknown>;
 }
 
+function monthLabel(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleString("en-IN", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export function SalesTable({ sales, onRemove, onUpdate }: SalesTableProps) {
-  const [page, setPage] = useState(0);
+  const months = useMemo(
+    () =>
+      Array.from(new Set(sales.map((s) => s.sale_date.slice(0, 7)))).sort().reverse(),
+    [sales]
+  );
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCash, setEditCash] = useState("");
   const [editOnline, setEditOnline] = useState("");
+  const [editSender, setEditSender] = useState("");
 
   if (sales.length === 0) return null;
 
-  const totalPages = Math.max(1, Math.ceil(sales.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages - 1);
-  const pageRows = sales.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
-  const grandTotal = sales.reduce((sum, s) => sum + dailyTotal(s), 0);
-
-  const totalCache = useMemo(
-    () =>
-      sales.reduce<Record<string, number>>((acc, s) => {
-        acc[s.id] = dailyTotal(s);
-        return acc;
-      }, {}),
-    [sales]
+  // Snap to the most recent month with data unless the user picked one explicitly
+  const activeMonth =
+    selectedMonth && months.includes(selectedMonth) ? selectedMonth : months[0];
+  const monthIdx = months.indexOf(activeMonth);
+  const monthRows = sales.filter((s) => s.sale_date.startsWith(activeMonth));
+  const monthTotal = monthRows.reduce((sum, s) => sum + dailyTotal(s), 0);
+  const since = sales.reduce(
+    (min, s) => (s.sale_date < min ? s.sale_date : min),
+    sales[0].sale_date
   );
 
   const startEdit = (s: AmulDailySale) => {
     setEditingId(s.id);
     setEditCash(String(s.cash_amount));
     setEditOnline(String(s.online_amount));
+    setEditSender(s.sender_name ?? "");
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditCash("");
     setEditOnline("");
+    setEditSender("");
   };
 
   const saveEdit = async (s: AmulDailySale) => {
@@ -52,12 +66,49 @@ export function SalesTable({ sales, onRemove, onUpdate }: SalesTableProps) {
     const online = parseFloat(editOnline);
     if (isNaN(cash) || isNaN(online) || cash < 0 || online < 0) return;
     if (cash + online <= 0) return;
-    await onUpdate(s.id, { cash_amount: cash, online_amount: online });
+    await onUpdate(s.id, {
+      cash_amount: cash,
+      online_amount: online,
+      sender_name: editSender.trim() || null,
+    });
     cancelEdit();
+  };
+
+  const onEditKeyDown = (e: React.KeyboardEvent, s: AmulDailySale) => {
+    if (e.key === "Enter") saveEdit(s);
+    if (e.key === "Escape") cancelEdit();
   };
 
   return (
     <div className="bg-[#132E3D] rounded-xl p-4 border border-[#1A3A5C]/30">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div>
+          <h3 className="font-semibold text-[#E8ECF1]">Daily Sales</h3>
+          <p className="text-xs text-[#E8ECF1]/50">
+            Tracking since {since} ({sales.length} days recorded)
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-[#E8ECF1]">
+          <button
+            onClick={() => setSelectedMonth(months[Math.min(monthIdx + 1, months.length - 1)])}
+            disabled={monthIdx >= months.length - 1}
+            aria-label="Previous month"
+            className="p-1 bg-[#0D1B2A] border border-[#1A3A5C]/50 rounded disabled:opacity-40 hover:border-[#D4A843]/50 transition-colors"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="min-w-[8.5rem] text-center font-medium">{monthLabel(activeMonth)}</span>
+          <button
+            onClick={() => setSelectedMonth(months[Math.max(monthIdx - 1, 0)])}
+            disabled={monthIdx <= 0}
+            aria-label="Next month"
+            className="p-1 bg-[#0D1B2A] border border-[#1A3A5C]/50 rounded disabled:opacity-40 hover:border-[#D4A843]/50 transition-colors"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-[#E8ECF1]">
           <thead>
@@ -71,7 +122,7 @@ export function SalesTable({ sales, onRemove, onUpdate }: SalesTableProps) {
             </tr>
           </thead>
           <tbody>
-            {pageRows.map((s) => (
+            {monthRows.map((s) => (
               <tr key={s.id} className="border-b border-[#1A3A5C]/20">
                 <td className="py-2 pr-3">{s.sale_date}</td>
                 {editingId === s.id ? (
@@ -82,7 +133,9 @@ export function SalesTable({ sales, onRemove, onUpdate }: SalesTableProps) {
                         min="0"
                         value={editCash}
                         onChange={(e) => setEditCash(e.target.value)}
-                        className="w-20 bg-[#0D1B2A] border border-[#1A3A5C]/50 rounded px-2 py-1 text-sm text-[#E8ECF1]"
+                        onKeyDown={(e) => onEditKeyDown(e, s)}
+                        className={editInputClass}
+                        aria-label="Cash amount"
                       />
                     </td>
                     <td className="py-2 pr-3">
@@ -91,13 +144,25 @@ export function SalesTable({ sales, onRemove, onUpdate }: SalesTableProps) {
                         min="0"
                         value={editOnline}
                         onChange={(e) => setEditOnline(e.target.value)}
-                        className="w-20 bg-[#0D1B2A] border border-[#1A3A5C]/50 rounded px-2 py-1 text-sm text-[#E8ECF1]"
+                        onKeyDown={(e) => onEditKeyDown(e, s)}
+                        className={editInputClass}
+                        aria-label="Online amount"
                       />
                     </td>
                     <td className="py-2 pr-3 text-[#E8ECF1]/50">
                       {(parseFloat(editCash) || 0) + (parseFloat(editOnline) || 0)}
                     </td>
-                    <td className="py-2 pr-3" colSpan={1}>
+                    <td className="py-2 pr-3">
+                      <input
+                        type="text"
+                        value={editSender}
+                        onChange={(e) => setEditSender(e.target.value)}
+                        onKeyDown={(e) => onEditKeyDown(e, s)}
+                        className={editInputClass}
+                        aria-label="Sender name"
+                      />
+                    </td>
+                    <td className="py-2">
                       <div className="flex gap-1">
                         <button
                           onClick={() => saveEdit(s)}
@@ -121,7 +186,7 @@ export function SalesTable({ sales, onRemove, onUpdate }: SalesTableProps) {
                     <td className="py-2 pr-3">{formatRupees(s.cash_amount)}</td>
                     <td className="py-2 pr-3">{formatRupees(s.online_amount)}</td>
                     <td className="py-2 pr-3 font-semibold text-[#00895E]">
-                      {formatRupees(totalCache[s.id])}
+                      {formatRupees(dailyTotal(s))}
                     </td>
                     <td className="py-2 pr-3 text-[#E8ECF1]/70">{s.sender_name || "—"}</td>
                     <td className="py-2 text-right">
@@ -152,41 +217,16 @@ export function SalesTable({ sales, onRemove, onUpdate }: SalesTableProps) {
           <tfoot>
             <tr>
               <td className="py-2 pr-3 font-semibold" colSpan={3}>
-                Total
+                Total — {monthLabel(activeMonth)}
               </td>
               <td className="py-2 pr-3 font-semibold text-[#00895E]">
-                {formatRupees(grandTotal)}
+                {formatRupees(monthTotal)}
               </td>
               <td colSpan={2} />
             </tr>
           </tfoot>
         </table>
       </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-3 text-sm text-[#E8ECF1]/60">
-          <span>
-            Page {safePage + 1} of {totalPages} ({sales.length} records)
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={safePage === 0}
-              className="px-3 py-1 bg-[#0D1B2A] border border-[#1A3A5C]/50 rounded disabled:opacity-40"
-            >
-              Prev
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={safePage === totalPages - 1}
-              className="px-3 py-1 bg-[#0D1B2A] border border-[#1A3A5C]/50 rounded disabled:opacity-40"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -38,6 +38,10 @@ export interface UploadResult {
   credits_used?: number;
   status?: string;
   source?: string;
+  duplicate?: boolean;
+  created_count?: number;
+  skipped_duplicates?: number;
+  skipped_undated?: number;
 }
 
 export function useAmulInvoices(parlourId?: string) {

@@ -45,3 +45,20 @@ export const NAV_ITEMS = [
   { path: "/sip-tracker", label: "SIP Tracker", icon: "ClipboardList" },
   { path: "/settings-privacy", label: "Settings & Privacy", icon: "Lock" },
 ] as const;
+
+// The primary account (you) sees the whole app; parlour team members —
+// regardless of their parlour role — only ever see the Parlour page.
+const PRIMARY_EMAIL = (
+  import.meta.env.VITE_PRIMARY_EMAIL || "saurabhharak1997@gmail.com"
+).toLowerCase();
+
+export type NavItem = (typeof NAV_ITEMS)[number];
+
+export function isPrimaryUser(email?: string | null): boolean {
+  return !!email && email.toLowerCase() === PRIMARY_EMAIL;
+}
+
+export function navItemsFor(email?: string | null): readonly NavItem[] {
+  if (isPrimaryUser(email)) return NAV_ITEMS;
+  return NAV_ITEMS.filter((item) => item.path === "/parlour");
+}

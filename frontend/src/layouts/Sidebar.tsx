@@ -16,7 +16,7 @@ import {
   Wallet,
   Store,
 } from "lucide-react";
-import { NAV_ITEMS } from "../lib/constants";
+import { navItemsFor } from "../lib/constants";
 import { useAuth } from "../contexts/AuthContext";
 
 const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
@@ -44,6 +44,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const items = navItemsFor(user?.email);
 
   const handleNav = (path: string) => {
     navigate(path);
@@ -90,7 +91,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Nav items */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
-          {NAV_ITEMS.map((item) => {
+          {items.map((item) => {
             const Icon = iconMap[item.icon];
             const isActive = location.pathname === item.path;
 

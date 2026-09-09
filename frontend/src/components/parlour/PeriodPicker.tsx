@@ -88,9 +88,12 @@ export function PeriodPicker({ value, onChange }: PeriodPickerProps) {
             aria-label="Month Year"
             value={monthYear}
             onChange={(e) => {
+              // Build periodValue from the event, not state — the state update
+              // is not visible to this closure yet, which lagged the query one
+              // selection behind.
               const y = Number(e.target.value);
               setMonthYear(y);
-              emit("month");
+              onChange({ period: "month", periodValue: `${y}-${pad(month)}` });
             }}
             className="bg-[#132E3D] border border-[#1A3A5C]/50 rounded-lg px-2 py-1.5 text-sm text-[#E8ECF1]"
           >
@@ -104,8 +107,9 @@ export function PeriodPicker({ value, onChange }: PeriodPickerProps) {
             aria-label="Month"
             value={month}
             onChange={(e) => {
-              setMonth(Number(e.target.value));
-              emit("month");
+              const m = Number(e.target.value);
+              setMonth(m);
+              onChange({ period: "month", periodValue: `${monthYear}-${pad(m)}` });
             }}
             className="bg-[#132E3D] border border-[#1A3A5C]/50 rounded-lg px-2 py-1.5 text-sm text-[#E8ECF1]"
           >
@@ -124,8 +128,9 @@ export function PeriodPicker({ value, onChange }: PeriodPickerProps) {
             aria-label="Quarter Year"
             value={quarterYear}
             onChange={(e) => {
-              setQuarterYear(Number(e.target.value));
-              emit("quarter");
+              const y = Number(e.target.value);
+              setQuarterYear(y);
+              onChange({ period: "quarter", periodValue: `${y}-${quarter}` });
             }}
             className="bg-[#132E3D] border border-[#1A3A5C]/50 rounded-lg px-2 py-1.5 text-sm text-[#E8ECF1]"
           >
@@ -139,8 +144,9 @@ export function PeriodPicker({ value, onChange }: PeriodPickerProps) {
             aria-label="Quarter"
             value={quarter}
             onChange={(e) => {
-              setQuarter(e.target.value);
-              emit("quarter");
+              const q = e.target.value;
+              setQuarter(q);
+              onChange({ period: "quarter", periodValue: `${quarterYear}-${q}` });
             }}
             className="bg-[#132E3D] border border-[#1A3A5C]/50 rounded-lg px-2 py-1.5 text-sm text-[#E8ECF1]"
           >
@@ -158,8 +164,9 @@ export function PeriodPicker({ value, onChange }: PeriodPickerProps) {
           aria-label="Year"
           value={yearVal}
           onChange={(e) => {
-            setYearVal(Number(e.target.value));
-            emit("year");
+            const y = Number(e.target.value);
+            setYearVal(y);
+            onChange({ period: "year", periodValue: String(y) });
           }}
           className="bg-[#132E3D] border border-[#1A3A5C]/50 rounded-lg px-3 py-1.5 text-sm text-[#E8ECF1]"
         >

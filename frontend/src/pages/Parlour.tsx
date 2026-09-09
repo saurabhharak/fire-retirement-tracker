@@ -6,32 +6,28 @@ import { ParlourProvider, useParlour } from "../contexts/ParlourContext";
 import { ParlourSummaryCards } from "../components/parlour/ParlourSummaryCards";
 import { SalesQuickAdd } from "../components/parlour/SalesQuickAdd";
 import { SalesTable } from "../components/parlour/SalesTable";
-import { WhatsAppImport } from "../components/parlour/WhatsAppImport";
-import { InvoiceUpload } from "../components/parlour/InvoiceUpload";
-import { InvoiceList } from "../components/parlour/InvoiceList";
+import { PurchaseQuickAdd } from "../components/parlour/PurchaseQuickAdd";
+import { PurchasesTable } from "../components/parlour/PurchasesTable";
 import { OtherExpenses } from "../components/parlour/OtherExpenses";
 import { PnLCharts } from "../components/parlour/PnLCharts";
-import { SarvamWidget } from "../components/parlour/SarvamWidget";
 import { useParlours } from "../hooks/useParlours";
 import { useAmulSales } from "../hooks/useAmulSales";
-import { useAmulInvoices } from "../hooks/useAmulInvoices";
+import { useAmulPurchases } from "../hooks/useAmulPurchases";
 import { useAmulOtherExpenses } from "../hooks/useAmulOtherExpenses";
 import { useAmulAnalytics } from "../hooks/useAmulAnalytics";
-import { useSarvamUsage } from "../hooks/useSarvamUsage";
 import { useParlourMembers } from "../hooks/useParlourMembers";
 import { useAuth } from "../contexts/AuthContext";
 import { formatPeriodValue, periodLabel } from "../lib/parlourCalculations";
 import { PeriodPicker, type PeriodSelection } from "../components/parlour/PeriodPicker";
 import { MembersManager } from "../components/parlour/MembersManager";
 
-type Tab = "sales" | "purchases" | "expenses" | "analytics" | "sarvam" | "members";
+type Tab = "sales" | "purchases" | "expenses" | "analytics" | "members";
 
 const TABS: { value: Tab; label: string }[] = [
   { value: "sales", label: "Sales" },
   { value: "purchases", label: "Purchases" },
   { value: "expenses", label: "Other Expenses" },
   { value: "analytics", label: "Analytics" },
-  { value: "sarvam", label: "Sarvam" },
   { value: "members", label: "Members" },
 ];
 
@@ -54,15 +50,17 @@ function ParlourInner() {
   const [showNewParlour, setShowNewParlour] = useState(false);
   const [newName, setNewName] = useState("");
   const [newCredits, setNewCredits] = useState("");
+  const [createError, setCreateError] = useState("");
 
-  const { sales, isLoading: salesLoading, save: saveSale, update: updateSale, remove: removeSale, importWhatsApp } =
+  const { sales, isLoading: salesLoading, save: saveSale, update: updateSale, remove: removeSale } =
     useAmulSales(activeId);
   const {
-    invoices,
-    isLoading: invoicesLoading,
-    upload: uploadInvoices,
-    remove: removeInvoice,
-  } = useAmulInvoices(activeId);
+    purchases,
+    isLoading: purchasesLoading,
+    save: savePurchase,
+    update: updatePurchase,
+    remove: removePurchase,
+  } = useAmulPurchases(activeId);
   const {
     expenses,
     isLoading: expensesLoading,
@@ -73,22 +71,26 @@ function ParlourInner() {
     activeId,
     { period: periodSel.period, periodValue: periodSel.periodValue }
   );
-  const { data: sarvamSpend, isLoading: sarvamLoading } = useSarvamUsage(activeId);
   const membersHook = useParlourMembers(activeId);
 
   const handleCreateParlour = async () => {
     if (!newName.trim()) return;
-    const result = (await saveParlour({
-      name: newName.trim(),
-      sarvam_starting_credits: newCredits ? parseFloat(newCredits) : 0,
-    })) as {
-      data?: { id?: string };
-    };
-    setNewName("");
-    setNewCredits("");
-    setShowNewParlour(false);
-    if (result?.data?.id) {
-      setSelectedParlour(result.data.id, "owner");
+    setCreateError("");
+    try {
+      const result = (await saveParlour({
+        name: newName.trim(),
+        sarvam_starting_credits: newCredits ? parseFloat(newCredits) : 0,
+      })) as {
+        data?: { id?: string };
+      };
+      setNewName("");
+      setNewCredits("");
+      setShowNewParlour(false);
+      if (result?.data?.id) {
+        setSelectedParlour(result.data.id, "owner");
+      }
+    } catch (e) {
+      setCreateError(e instanceof Error ? e.message : "Could not create parlour");
     }
   };
 
@@ -102,7 +104,7 @@ function ParlourInner() {
       />
 
       {/* Parlour selector + New */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         <select
           value={activeId}
           onChange={(e) => {
@@ -160,6 +162,7 @@ function ParlourInner() {
               Create
             </button>
           </div>
+          {createError && <p className="text-sm text-[#E5A100] mt-2">{createError}</p>}
         </div>
       )}
 
@@ -170,12 +173,12 @@ function ParlourInner() {
       {activeId && (
         <>
           {/* Tabs */}
-          <div className="flex gap-2 mb-6 border-b border-[#1A3A5C]/30">
+          <div className="flex gap-2 mb-6 border-b border-[#1A3A5C]/30 overflow-x-auto">
             {TABS.map((t) => (
               <button
                 key={t.value}
                 onClick={() => setTab(t.value)}
-                className={`px-4 py-2 text-sm border-b-2 transition-colors ${
+                className={`px-4 py-2 text-sm border-b-2 transition-colors whitespace-nowrap shrink-0 ${
                   tab === t.value
                     ? "border-[#00895E] text-[#00895E] font-medium"
                     : "border-transparent text-[#E8ECF1]/60 hover:text-[#E8ECF1]"
@@ -189,7 +192,6 @@ function ParlourInner() {
           {tab === "sales" && (
             <>
               <SalesQuickAdd onSave={saveSale} />
-              <WhatsAppImport onImport={importWhatsApp} />
               {salesLoading ? (
                 <LoadingState />
               ) : sales.length === 0 ? (
@@ -206,14 +208,14 @@ function ParlourInner() {
 
           {tab === "purchases" && (
             <>
-              <InvoiceUpload onUpload={uploadInvoices} />
-              {invoicesLoading ? (
+              <PurchaseQuickAdd onSave={savePurchase} />
+              {purchasesLoading ? (
                 <LoadingState />
               ) : (
-                <InvoiceList
-                  invoices={invoices}
-                  parlourId={activeId}
-                  onRemove={removeInvoice}
+                <PurchasesTable
+                  purchases={purchases}
+                  onRemove={removePurchase}
+                  onUpdate={(id, data) => updatePurchase({ id, data })}
                 />
               )}
             </>
@@ -251,19 +253,6 @@ function ParlourInner() {
                     isLoading={analyticsLoading}
                   />
                   <PnLCharts trends={analytics?.trends} isLoading={analyticsLoading} />
-                </>
-              )}
-            </>
-          )}
-
-          {tab === "sarvam" && (
-            <>
-              {!isOwner ? (
-                <EmptyState message="Only the parlour owner can view Sarvam credit usage" />
-              ) : (
-                <>
-                  <SarvamWidget spend={sarvamSpend} isLoading={sarvamLoading} />
-                  <EmptyState message="Sarvam OCR credits are tracked here — every extraction logs its usage." />
                 </>
               )}
             </>

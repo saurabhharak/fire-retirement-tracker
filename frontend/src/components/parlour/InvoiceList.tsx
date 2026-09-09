@@ -13,7 +13,13 @@ interface InvoiceListProps {
 export function InvoiceList({ invoices, parlourId, onRemove }: InvoiceListProps) {
   const [openId, setOpenId] = useState<string | null>(null);
 
-  if (invoices.length === 0) return null;
+  if (invoices.length === 0) {
+    return (
+      <p className="text-sm text-[#E8ECF1]/50">
+        No purchase invoices yet — upload a distributor PDF above to extract line items.
+      </p>
+    );
+  }
   const detail = invoices.find((i) => i.id === openId);
 
   return (

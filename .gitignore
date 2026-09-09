@@ -20,3 +20,14 @@ frontend/src/App.css
 frontend/src/assets/hero.png
 frontend/src/assets/react.svg
 frontend/src/assets/vite.svg
+
+# Local tooling and session artifacts
+.claude/settings.local.json
+.commandcode/
+.playwright-mcp/
+.serena/
+gui-test-screenshots/
+backend/audit_*.log
+backend/audit_result.json
+backend/llm_audit_result.json
+real_invoice.pdf

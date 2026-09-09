@@ -75,6 +75,10 @@ vi.mock("../../hooks/useAmulSales", () => ({
   useAmulSales: vi.fn(),
 }));
 
+vi.mock("../../hooks/useAmulPurchases", () => ({
+  useAmulPurchases: vi.fn(),
+}));
+
 vi.mock("../../hooks/useAmulInvoices", () => ({
   useAmulInvoices: vi.fn(),
 }));
@@ -101,6 +105,7 @@ vi.mock("../../contexts/AuthContext", () => ({
 
 import { useParlours } from "../../hooks/useParlours";
 import { useAmulSales } from "../../hooks/useAmulSales";
+import { useAmulPurchases } from "../../hooks/useAmulPurchases";
 import { useAmulInvoices } from "../../hooks/useAmulInvoices";
 import { useAmulOtherExpenses } from "../../hooks/useAmulOtherExpenses";
 import { useAmulAnalytics } from "../../hooks/useAmulAnalytics";
@@ -109,6 +114,7 @@ import { useParlourMembers } from "../../hooks/useParlourMembers";
 
 const mockUseParlours = vi.mocked(useParlours);
 const mockUseAmulSales = vi.mocked(useAmulSales);
+const mockUseAmulPurchases = vi.mocked(useAmulPurchases);
 const mockUseAmulInvoices = vi.mocked(useAmulInvoices);
 const mockUseAmulOtherExpenses = vi.mocked(useAmulOtherExpenses);
 const mockUseAmulAnalytics = vi.mocked(useAmulAnalytics);
@@ -128,8 +134,15 @@ function mockOwnerHooks() {
     save: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
-    importWhatsApp: vi.fn(),
   } as unknown as ReturnType<typeof useAmulSales>);
+
+  mockUseAmulPurchases.mockReturnValue({
+    purchases: [],
+    isLoading: false,
+    save: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+  } as unknown as ReturnType<typeof useAmulPurchases>);
 
   mockUseAmulInvoices.mockReturnValue({
     invoices: INVOICES,
@@ -196,7 +209,6 @@ describe("Parlour page", () => {
       save: vi.fn(),
       update: vi.fn(),
       remove: vi.fn(),
-      importWhatsApp: vi.fn(),
     } as unknown as ReturnType<typeof useAmulSales>);
     render(<Parlour />);
     await waitFor(() => {
@@ -218,7 +230,7 @@ describe("Parlour page", () => {
     });
   });
 
-  it("hides Sarvam widget for data_entry role", async () => {
+  it("does not render the Sarvam tab", async () => {
     localStorage.setItem(
       "fire_tracker_selected_parlour",
       JSON.stringify({ parlourId: "p1", role: "data_entry" })
@@ -229,12 +241,8 @@ describe("Parlour page", () => {
       save: vi.fn(),
     } as unknown as ReturnType<typeof useParlours>);
     render(<Parlour />);
-    await waitFor(() => screen.getByText("Sarvam"));
-    fireEvent.click(screen.getByText("Sarvam"));
-    // The Sarvam tab button always renders; the spend widget is owner-only.
-    expect(screen.queryByText(/Sarvam AI Credits/i)).toBeNull();
-    expect(
-      screen.queryByText(/Only the parlour owner can view Sarvam/i)
-    ).toBeTruthy();
+    await waitFor(() => screen.getByText("Members"));
+    // Sarvam OCR tab is hidden entirely
+    expect(screen.queryByText("Sarvam")).toBeNull();
   });
 });

@@ -7,7 +7,7 @@ export interface AmulDailySale {
   sale_date: string;
   cash_amount: number;
   online_amount: number;
-  sender_name?: string;
+  sender_name?: string | null;
   entered_by?: string;
 }
 
@@ -51,29 +51,11 @@ export function useAmulSales(parlourId?: string) {
     },
   });
 
-  const importWhatsApp = useMutation({
-    mutationFn: async (text: string) => {
-      const form = new FormData();
-      form.append("parlour_id", parlourId ?? "");
-      form.append("text", text);
-      const { apiFetch } = await import("../lib/api");
-      return apiFetch<{ count: number; skipped: number }>(
-        "/api/amul/sales/import-whatsapp",
-        { method: "POST", body: form }
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["amul-sales"] });
-      queryClient.invalidateQueries({ queryKey: ["amul-analytics"] });
-    },
-  });
-
   return {
     sales: query.data || [],
     isLoading: query.isLoading,
     save: save.mutateAsync,
     update: update.mutateAsync,
     remove: remove.mutateAsync,
-    importWhatsApp: importWhatsApp.mutateAsync,
   };
 }
