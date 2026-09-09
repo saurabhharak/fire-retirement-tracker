@@ -1,10 +1,13 @@
 """Amul parlour module API routes: sales, invoices, analytics, Sarvam usage."""
 from uuid import UUID
+import hashlib
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from pydantic import ValidationError
 
 from app.core.models import (
+    AmulDailyPurchaseCreate,
+    AmulDailyPurchaseUpdate,
     AmulDailySaleCreate,
     AmulDailySaleUpdate,
     AmulInvoiceItemUpdate,
@@ -18,6 +21,7 @@ from app.rate_limit import limiter
 from app.services import (
     amul_invoices_svc,
     amul_other_expenses_svc,
+    amul_purchases_svc,
     amul_sales_svc,
     parlours_svc,
     sarvam_client,
@@ -96,6 +100,69 @@ async def delete_daily_sale(
 
 
 # ---------------------------------------------------------------------------
+# Daily purchases (manual day-by-day totals)
+# ---------------------------------------------------------------------------
+
+@router.get("/amul/purchases")
+@limiter.limit("60/minute")
+async def list_daily_purchases(
+    request: Request,
+    parlour_id: str = Query(...),
+    from_date: str = Query(None),
+    to_date: str = Query(None),
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    entries = amul_purchases_svc.load_daily_purchases(
+        parlour_id, user.id, user.access_token,
+        from_date=from_date, to_date=to_date,
+    )
+    return {"data": entries}
+
+
+@router.post("/amul/purchases")
+@limiter.limit("30/minute")
+async def create_daily_purchase(
+    request: Request,
+    data: AmulDailyPurchaseCreate,
+    parlour_id: str = Query(...),
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    result = amul_purchases_svc.save_daily_purchase(
+        parlour_id, user.id, data.model_dump(mode='json'), user.access_token,
+    )
+    return {"data": result, "message": "Daily purchase added"}
+
+
+@router.patch("/amul/purchases/{purchase_id}")
+@limiter.limit("30/minute")
+async def update_daily_purchase(
+    request: Request,
+    purchase_id: UUID,
+    data: AmulDailyPurchaseUpdate,
+    parlour_id: str = Query(...),
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    result = amul_purchases_svc.update_daily_purchase(
+        str(purchase_id), parlour_id, user.id,
+        data.model_dump(mode='json', exclude_unset=True), user.access_token,
+    )
+    return {"data": result, "message": "Daily purchase updated"}
+
+
+@router.delete("/amul/purchases/{purchase_id}")
+@limiter.limit("10/minute")
+async def delete_daily_purchase(
+    request: Request,
+    purchase_id: UUID,
+    parlour_id: str = Query(...),
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    amul_purchases_svc.delete_daily_purchase(str(purchase_id), parlour_id, user.id, user.access_token)
+    log_audit(user.id, "delete_amul_purchase", {"purchase_id": str(purchase_id)}, user.access_token)
+    return {"message": "Daily purchase deleted"}
+
+
+# ---------------------------------------------------------------------------
 # Purchase invoices
 # ---------------------------------------------------------------------------
 
@@ -158,6 +225,20 @@ async def upload_invoices_pdf(
     if not pdf_bytes.startswith(b"%PDF-"):
         raise HTTPException(status_code=415, detail="Only PDF files are supported")
 
+    # Dedup layer 1: the exact same file was already processed for this
+    # parlour — skip OCR (and paid credits) entirely and return what exists.
+    pdf_hash = hashlib.sha256(pdf_bytes).hexdigest()
+    existing = amul_invoices_svc.find_by_pdf_hash(parlour_id, pdf_hash, user.access_token)
+    if existing:
+        return {
+            "data": existing,
+            "credits_used": 0.0,
+            "status": "success",
+            "source": "cache",
+            "duplicate": True,
+            "created_count": 0,
+        }
+
     extraction = sarvam_client.extract_invoices_from_pdf(
         pdf_bytes,
         parlour_id,
@@ -167,12 +248,26 @@ async def upload_invoices_pdf(
         source_pdf=file.filename,
     )
     created = []
+    skipped_duplicates = 0
+    skipped_undated = extraction.get("skipped_undated", 0)
     for invoice in extraction["invoices"]:
+        # bill_date is NOT NULL in the DB — an invoice without a readable
+        # date must never reach the insert.
+        if not invoice.get("bill_date"):
+            skipped_undated += 1
+            continue
+        # Dedup layer 2: the same bill (bill_no + bill_date) is already stored
+        # — e.g. a re-scan or a different PDF containing the same invoice.
+        if amul_invoices_svc.find_duplicate(parlour_id, invoice, user.access_token):
+            skipped_duplicates += 1
+            continue
         result = amul_invoices_svc.save_invoice_with_items(
             parlour_id, user.id,
-            {k: v for k, v in invoice.items() if k != "items" and k != "status" and k != "warning"},
+            {k: v for k, v in invoice.items()
+             if k not in ("items", "status", "warning", "page_no")},
             invoice.get("items", []),
             user.access_token,
+            source_pdf_hash=pdf_hash,
         )
         created.append(result)
     log_audit(user.id, "upload_amul_invoices", {"parlour_id": parlour_id, "count": len(created)}, user.access_token)
@@ -181,6 +276,10 @@ async def upload_invoices_pdf(
         "credits_used": extraction["credits_used"],
         "status": extraction["status"],
         "source": extraction["source"],
+        "duplicate": False,
+        "created_count": len(created),
+        "skipped_duplicates": skipped_duplicates,
+        "skipped_undated": skipped_undated,
     }
 
 

@@ -383,9 +383,16 @@ class ParlourUpdate(BaseModel):
 
 
 class ParlourMemberAdd(BaseModel):
-    """Add a member to a parlour by email."""
-    member_email: str = Field(min_length=1, max_length=200)
+    """Add a member to a parlour by email and/or mobile number."""
+    member_email: Optional[str] = Field(None, max_length=200)
+    phone: Optional[str] = Field(None, max_length=20)
     role: Literal["owner", "data_entry"] = "data_entry"
+
+    @model_validator(mode="after")
+    def require_email_or_phone(self):
+        if not (self.member_email or self.phone):
+            raise ValueError("Provide an email or a mobile number")
+        return self
 
 
 class ParlourMemberUpdate(BaseModel):
@@ -413,6 +420,24 @@ class AmulDailySaleUpdate(BaseModel):
     cash_amount: Optional[float] = Field(None, ge=0)
     online_amount: Optional[float] = Field(None, ge=0)
     sender_name: Optional[str] = Field(None, max_length=100)
+
+
+class AmulDailyPurchaseCreate(BaseModel):
+    """Create a daily purchase entry (manual day-by-day totals).
+
+    Unlike sales, zero amounts are allowed — zero rows double as
+    "not filled yet" placeholders the team completes later.
+    """
+    purchase_date: date
+    amount: float = Field(default=0, ge=0)
+    note: str = Field(default="", max_length=200)
+
+
+class AmulDailyPurchaseUpdate(BaseModel):
+    """Partial update for a daily purchase."""
+    purchase_date: Optional[date] = None
+    amount: Optional[float] = Field(None, ge=0)
+    note: Optional[str] = Field(None, max_length=200)
 
 
 class AmulInvoiceCreate(BaseModel):
