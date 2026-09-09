@@ -5,6 +5,7 @@ description = "FastAPI backend for FIRE Retirement Tracker"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.111.0",
+    "python-multipart>=0.0.9",
     "uvicorn[standard]>=0.30.0",
     "supabase>=2.0.0",
     "pydantic>=2.0.0",
